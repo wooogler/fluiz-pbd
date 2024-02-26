@@ -10,3 +10,14 @@ reloadOnUpdate('pages/background');
 reloadOnUpdate('pages/content/style.scss');
 
 console.log('background loaded');
+
+chrome.action.onClicked.addListener(tab => {
+  chrome.windows.create({
+    url: 'src/pages/popup/index.html',
+    type: 'popup',
+    width: 400,
+    height: 600,
+  });
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {});
