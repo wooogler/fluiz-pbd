@@ -15,14 +15,10 @@ chrome.action.onClicked.addListener(tab => {
   chrome.windows.create({
     url: 'src/pages/popup/index.html',
     type: 'popup',
-    width: 400,
+    width: 600,
     height: 600,
   });
-
-  console.log('window created');
-
   chrome.tabs.query({}, tabs => {
-    console.log(tabs);
     tabs.forEach(tab => {
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
@@ -32,3 +28,29 @@ chrome.action.onClicked.addListener(tab => {
     });
   });
 });
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'activateEventTracking' || message.action === 'deactivateEventTracking') {
+    chrome.tabs.query({}, tabs => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, message, response => {
+          console.log('Message sent to tab: ' + tab.id);
+        });
+      });
+    });
+  }
+});
+
+// chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+//   if (request.action === 'activateEventTracking' || request.action === 'deactivateEventTracking') {
+//     chrome.tabs.query({}, tabs => {
+//       tabs.forEach(tab => {
+//         chrome.scripting.executeScript({
+//           target: { tabId: tab.id, allFrames: true },
+//           files: ['src/pages/contentInjected/index.js'],
+//         });
+//         console.log('script executed');
+//       });
+//     });
+//   }
+// });

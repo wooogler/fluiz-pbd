@@ -1,4 +1,5 @@
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
+import modeStorage from '@root/src/shared/storages/modeStorage';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 
 refreshOnUpdate('pages/content/injected/detectElement');
@@ -19,13 +20,27 @@ function getElementUniqueId(element: HTMLElement): string {
   return uniqueAttrs.join(',');
 }
 
-document.addEventListener('click', event => {
+const handleClickEvent = (event: MouseEvent) => {
   const targetElement = event.target as HTMLElement;
   const uniqueElementId = getElementUniqueId(targetElement);
+  const currentPageUrl = document.location.href;
   if (uniqueElementId) {
     eventInfoStorage.addEvent({
       type: 'click',
       targetId: uniqueElementId,
+      url: currentPageUrl,
     });
+  }
+};
+
+// document.addEventListener('click', handleClickEvent);
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'activateEventTracking') {
+    document.addEventListener('click', handleClickEvent);
+    console.log('Event tracking activated');
+  } else if (message.action === 'deactivateEventTracking') {
+    document.removeEventListener('click', handleClickEvent);
+    console.log('Event tracking deactivated');
   }
 });

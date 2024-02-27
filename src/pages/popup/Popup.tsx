@@ -24,10 +24,12 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import { DeleteIcon } from '@chakra-ui/icons';
+import modeStorage from '@root/src/shared/storages/modeStorage';
 
 const Popup = () => {
   const documentInfo = useStorage(documentInfoStorage);
   const eventInfo = useStorage(eventInfoStorage);
+  const mode = useStorage(modeStorage);
 
   useEffect(() => {
     console.log(documentInfo);
@@ -54,6 +56,16 @@ const Popup = () => {
       'text/csv': ['.csv'],
     },
   });
+
+  const handleChangeMode = () => {
+    if (mode === 'record') {
+      modeStorage.change('stop');
+      chrome.runtime.sendMessage({ action: 'deactivateEventTracking' });
+    } else {
+      modeStorage.change('record');
+      chrome.runtime.sendMessage({ action: 'activateEventTracking' });
+    }
+  };
 
   return (
     <VStack w="100%" divider={<StackDivider borderColor="gray.200" />} spacing={4} p={4}>
@@ -100,8 +112,8 @@ const Popup = () => {
           <Text>{`(${eventInfo.length} Events)`}</Text>
           <Spacer />
           <HStack align="center" spacing={2}>
-            <Button size="sm" onClick={() => chrome.runtime.sendMessage({ action: 'activateEventTracking' })}>
-              Record
+            <Button size="sm" onClick={handleChangeMode}>
+              {mode === 'record' ? 'Stop' : 'Record'}
             </Button>
             <Button size="sm" colorScheme="blue" onClick={() => eventInfoStorage.clearEvents()}>
               Clear

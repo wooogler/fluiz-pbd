@@ -3,6 +3,7 @@ import { BaseStorage, StorageType, createStorage } from './base';
 export type EventInfo = {
   type: 'click' | 'input';
   targetId: string;
+  url: string;
   value?: string;
 };
 
