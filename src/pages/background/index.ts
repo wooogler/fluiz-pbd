@@ -18,6 +18,17 @@ chrome.action.onClicked.addListener(tab => {
     width: 400,
     height: 600,
   });
-});
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {});
+  console.log('window created');
+
+  chrome.tabs.query({}, tabs => {
+    console.log(tabs);
+    tabs.forEach(tab => {
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        files: ['src/pages/contentInjected/index.js'],
+      });
+      console.log('script executed');
+    });
+  });
+});

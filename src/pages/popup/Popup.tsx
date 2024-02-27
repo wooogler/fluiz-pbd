@@ -17,6 +17,7 @@ import {
   Spacer,
   VStack,
   StackDivider,
+  HStack,
 } from '@chakra-ui/react';
 import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 import { useDropzone } from 'react-dropzone';
@@ -98,9 +99,14 @@ const Popup = () => {
           </Text>
           <Text>{`(${eventInfo.length} Events)`}</Text>
           <Spacer />
-          <Button size="sm" colorScheme="blue" onClick={() => eventInfoStorage.clearEvents()}>
-            Clear
-          </Button>
+          <HStack align="center" spacing={2}>
+            <Button size="sm" onClick={() => chrome.runtime.sendMessage({ action: 'activateEventTracking' })}>
+              Record
+            </Button>
+            <Button size="sm" colorScheme="blue" onClick={() => eventInfoStorage.clearEvents()}>
+              Clear
+            </Button>
+          </HStack>
         </Flex>
         <Box overflowY="auto" maxH={250} w="100%">
           <Table variant="simple" size="sm" w="100%">
