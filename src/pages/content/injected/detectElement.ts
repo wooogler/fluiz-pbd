@@ -1,4 +1,4 @@
-import elementInfoStorage from '@root/src/shared/storages/elementInfoStorage';
+import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 
 refreshOnUpdate('pages/content/injected/detectElement');
@@ -19,10 +19,13 @@ function getElementUniqueId(element: HTMLElement): string {
   return uniqueAttrs.join(',');
 }
 
-document.addEventListener('mouseover', event => {
+document.addEventListener('click', event => {
   const targetElement = event.target as HTMLElement;
   const uniqueElementId = getElementUniqueId(targetElement);
   if (uniqueElementId) {
-    elementInfoStorage.update(uniqueElementId);
+    eventInfoStorage.addEvent({
+      type: 'click',
+      targetId: uniqueElementId,
+    });
   }
 });
