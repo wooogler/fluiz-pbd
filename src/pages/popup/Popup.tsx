@@ -145,7 +145,7 @@ const Popup = () => {
           <Table variant="simple" size="sm" w="100%">
             <Thead position="sticky" top={0} bgColor="white">
               <Tr>
-                <Th w={100}>Event</Th>
+                <Th w={50}>Event</Th>
                 <Th w={100}>URL</Th>
                 <Th w={100}>Target ID</Th>
                 <Th w={50}>Action</Th>
