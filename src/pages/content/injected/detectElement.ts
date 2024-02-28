@@ -5,7 +5,15 @@ import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 refreshOnUpdate('pages/content/injected/detectElement');
 
 function getElementUniqueId(element: HTMLElement): string {
-  const representativeAttrs = ['id', 'class', 'name', 'role', 'type', 'aria-label', 'href'];
+  const representativeAttrs = [
+    'id',
+    'class',
+    'name',
+    'role',
+    'type',
+    'aria-label',
+    'href',
+  ];
   const uniqueAttrs: string[] = [];
   if (element.textContent) {
     uniqueAttrs.push(element.textContent.trim().slice(0, 20));
@@ -32,8 +40,6 @@ const handleClickEvent = (event: MouseEvent) => {
     });
   }
 };
-
-// document.addEventListener('click', handleClickEvent);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {

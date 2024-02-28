@@ -23,8 +23,9 @@ import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import modeStorage from '@root/src/shared/storages/modeStorage';
+import ScrollableTextBox from './components/ScrollableTextBox';
 
 const Popup = () => {
   const documentInfo = useStorage(documentInfoStorage);
@@ -57,6 +58,13 @@ const Popup = () => {
     },
   });
 
+  const handleClickNewWindow = () => {
+    chrome.windows.create({
+      url: 'about:blank',
+      type: 'normal',
+    });
+  };
+
   const handleChangeMode = () => {
     if (mode === 'record') {
       modeStorage.change('stop');
@@ -68,7 +76,11 @@ const Popup = () => {
   };
 
   return (
-    <VStack w="100%" divider={<StackDivider borderColor="gray.200" />} spacing={4} p={4}>
+    <VStack
+      w="100%"
+      divider={<StackDivider borderColor="gray.200" />}
+      spacing={4}
+      p={4}>
       <VStack w="100%">
         <Box
           {...getRootProps()}
@@ -112,10 +124,19 @@ const Popup = () => {
           <Text>{`(${eventInfo.length} Events)`}</Text>
           <Spacer />
           <HStack align="center" spacing={2}>
+            <Button
+              size="sm"
+              onClick={handleClickNewWindow}
+              leftIcon={<AddIcon />}>
+              Window
+            </Button>
             <Button size="sm" onClick={handleChangeMode}>
               {mode === 'record' ? 'Stop' : 'Record'}
             </Button>
-            <Button size="sm" colorScheme="blue" onClick={() => eventInfoStorage.clearEvents()}>
+            <Button
+              size="sm"
+              colorScheme="blue"
+              onClick={() => eventInfoStorage.clearEvents()}>
               Clear
             </Button>
           </HStack>
@@ -124,22 +145,30 @@ const Popup = () => {
           <Table variant="simple" size="sm" w="100%">
             <Thead position="sticky" top={0} bgColor="white">
               <Tr>
-                <Th>Event</Th>
-                <Th>Target ID</Th>
-                <Th>Action</Th>
+                <Th w={100}>Event</Th>
+                <Th w={100}>URL</Th>
+                <Th w={100}>Target ID</Th>
+                <Th w={50}>Action</Th>
               </Tr>
             </Thead>
             <Tbody>
               {eventInfo.map(item => (
                 <Tr key={item.targetId}>
                   <Td>{item.type}</Td>
-                  <Td>{item.targetId.slice(0, 20)}</Td>
+                  <Td>
+                    <ScrollableTextBox maxW={100} text={item.url} />
+                  </Td>
+                  <Td>
+                    <ScrollableTextBox maxW={100} text={item.targetId} />
+                  </Td>
                   <Td>
                     <Button
                       size="sm"
                       colorScheme="red"
                       variant="ghost"
-                      onClick={() => eventInfoStorage.deleteEvent(item.targetId)}>
+                      onClick={() =>
+                        eventInfoStorage.deleteEvent(item.targetId)
+                      }>
                       <DeleteIcon />
                     </Button>
                   </Td>
@@ -153,4 +182,7 @@ const Popup = () => {
   );
 };
 
-export default withErrorBoundary(withSuspense(Popup, <div> Loading ... </div>), <div> Error Occur </div>);
+export default withErrorBoundary(
+  withSuspense(Popup, <div> Loading ... </div>),
+  <div> Error Occur </div>,
+);
