@@ -41,9 +41,22 @@ const handleClickEvent = (event: MouseEvent) => {
   }
 };
 
+const trackDirectAccess = () => {
+  if (!document.referrer) {
+    const currentPageUrl = document.location.href;
+    eventInfoStorage.addEvent({
+      type: 'access',
+      targetId: currentPageUrl,
+      url: currentPageUrl,
+    });
+    console.log('Direct access: ', currentPageUrl);
+  }
+};
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
     document.addEventListener('click', handleClickEvent);
+    trackDirectAccess();
     console.log('Event tracking activated');
   } else if (message.action === 'deactivateEventTracking') {
     document.removeEventListener('click', handleClickEvent);

@@ -1,7 +1,7 @@
 import { BaseStorage, StorageType, createStorage } from './base';
 
 export type EventInfo = {
-  type: 'click' | 'input';
+  type: 'click' | 'input' | 'access';
   targetId: string;
   url: string;
   value?: string;
@@ -27,7 +27,9 @@ const eventInfoStorage: EventInfoStorage = {
     await storage.set([]);
   },
   deleteEvent: async eventId => {
-    await storage.set((await storage.get()).filter(event => event.targetId !== eventId));
+    await storage.set(
+      (await storage.get()).filter(event => event.targetId !== eventId),
+    );
   },
 };
 

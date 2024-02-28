@@ -93,6 +93,7 @@ function sendMessageToTab(tabId: number, message: { action: string }) {
   });
 }
 
+// 새로운 탭이 생길 경우 해당 탭에 content script 주입
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (
     changeInfo.status === 'complete' &&
