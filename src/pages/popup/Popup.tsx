@@ -172,9 +172,7 @@ const Popup = () => {
                       size="sm"
                       colorScheme="red"
                       variant="ghost"
-                      onClick={() =>
-                        eventInfoStorage.deleteEvent(item.targetId)
-                      }>
+                      onClick={() => eventInfoStorage.deleteEvent(item.uid)}>
                       <DeleteIcon />
                     </Button>
                   </Td>
