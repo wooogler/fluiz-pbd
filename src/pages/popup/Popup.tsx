@@ -80,7 +80,9 @@ const Popup = () => {
       w="100%"
       divider={<StackDivider borderColor="gray.200" />}
       spacing={4}
-      p={4}>
+      p={4}
+      h="full"
+      flex={1}>
       <VStack w="100%">
         <Box
           {...getRootProps()}
@@ -116,7 +118,7 @@ const Popup = () => {
           </Table>
         )}
       </VStack>
-      <VStack w="100%">
+      <VStack w="100%" flex={1} overflowY="hidden">
         <Flex w="100%" align="center">
           <Text fontSize="xl" fontWeight="bold" mr={2}>
             Event List
@@ -141,11 +143,13 @@ const Popup = () => {
             </Button>
           </HStack>
         </Flex>
-        <Box overflowY="auto" maxH={250} w="100%">
+        <Box overflowY="auto" w="100%" flex={1}>
           <Table variant="simple" size="sm" w="100%">
-            <Thead position="sticky" top={0} bgColor="white">
+            <Thead position="sticky" top={0} bgColor="white" zIndex={1}>
               <Tr>
                 <Th w={50}>Event</Th>
+                <Th w={50}>Window ID</Th>
+                <Th w={50}>Tab ID</Th>
                 <Th w={100}>URL</Th>
                 <Th w={100}>Target ID</Th>
                 <Th w={50}>Action</Th>
@@ -155,6 +159,8 @@ const Popup = () => {
               {eventInfo.map(item => (
                 <Tr key={item.targetId}>
                   <Td>{item.type}</Td>
+                  <Td>{item.windowId}</Td>
+                  <Td>{item.tabId}</Td>
                   <Td>
                     <ScrollableTextBox maxW={100} text={item.url} />
                   </Td>

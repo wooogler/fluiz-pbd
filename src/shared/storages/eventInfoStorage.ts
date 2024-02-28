@@ -1,10 +1,19 @@
 import { BaseStorage, StorageType, createStorage } from './base';
 
 export type EventInfo = {
-  type: 'click' | 'input' | 'access';
+  type:
+    | 'click'
+    | 'input'
+    | 'access'
+    | 'tab-created'
+    | 'window-created'
+    | 'tab-removed'
+    | 'window-removed';
   targetId: string;
   url: string;
-  value?: string;
+  tabId: number;
+  windowId: number;
+  inputValue?: string;
 };
 
 type EventInfoStorage = BaseStorage<EventInfo[]> & {

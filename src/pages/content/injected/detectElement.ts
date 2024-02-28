@@ -32,34 +32,35 @@ const handleClickEvent = (event: MouseEvent) => {
   const targetElement = event.target as HTMLElement;
   const uniqueElementId = getElementUniqueId(targetElement);
   const currentPageUrl = document.location.href;
-  if (uniqueElementId) {
-    eventInfoStorage.addEvent({
-      type: 'click',
-      targetId: uniqueElementId,
-      url: currentPageUrl,
-    });
-  }
-};
 
-const trackDirectAccess = () => {
-  if (!document.referrer) {
-    const currentPageUrl = document.location.href;
-    eventInfoStorage.addEvent({
-      type: 'access',
-      targetId: currentPageUrl,
-      url: currentPageUrl,
-    });
-    console.log('Direct access: ', currentPageUrl);
-  }
+  console.log('Clicked element: ', uniqueElementId);
+
+  chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+    console.log(response);
+    if (response) {
+      const { tabId, windowId } = response;
+      if (uniqueElementId) {
+        eventInfoStorage.addEvent({
+          type: 'click',
+          targetId: uniqueElementId,
+          url: currentPageUrl,
+          tabId,
+          windowId,
+        });
+      }
+    }
+  });
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
     document.addEventListener('click', handleClickEvent);
-    trackDirectAccess();
+    // trackDirectAccess();
     console.log('Event tracking activated');
+    sendResponse({ status: 'Event tracking activated' });
   } else if (message.action === 'deactivateEventTracking') {
     document.removeEventListener('click', handleClickEvent);
     console.log('Event tracking deactivated');
+    sendResponse({ status: 'Event tracking deactivated' });
   }
 });

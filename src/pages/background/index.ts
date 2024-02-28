@@ -1,3 +1,6 @@
+import eventInfoStorage, {
+  EventInfo,
+} from '@root/src/shared/storages/eventInfoStorage';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
@@ -36,7 +39,7 @@ function createPopupWindow() {
     {
       url: 'src/pages/popup/index.html',
       type: 'popup',
-      width: 600,
+      width: 1200,
       height: 600,
     },
     newWindow => {
@@ -72,6 +75,7 @@ function injectContentScriptToTab(tabId: number) {
       files: ['src/pages/contentInjected/index.js'],
     })
     .then(async () => {
+      console.log('Content script injected: ', tabId);
       const mode = await modeStorage.get();
       const action =
         mode === 'record' ? 'activateEventTracking' : 'deactivateEventTracking';
@@ -89,6 +93,7 @@ function sendMessageToTab(tabId: number, message: { action: string }) {
       );
     } else {
       console.log(`Message sent to tab: ${tabId}`);
+      console.log(message);
     }
   });
 }
@@ -110,34 +115,72 @@ chrome.windows.onCreated.addListener(() => {
   injectContentScriptToAllTabs();
 });
 
-// chrome.windows.onCreated.addListener(async window => {
-//   chrome.tabs.query({ windowId: window.id }, async tabs => {
-//     const mode = await modeStorage.get();
-//     const action =
-//       mode === 'record' ? 'activateEventTracking' : 'deactivateEventTracking';
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'getContextId' && sender.tab) {
+    sendResponse({
+      tabId: sender.tab.id,
+      windowId: sender.tab.windowId,
+    });
+  } else if (
+    message.action === 'activateEventTracking' ||
+    message.action === 'deactivateEventTracking'
+  ) {
+    chrome.tabs.query({}, tabs => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, message, response => {
+          console.log('Message sent to tab: ' + tab.id);
+        });
+      });
+    });
+  }
+});
 
-//     tabs.forEach(tab => {
-//       if (
-//         tab.url &&
-//         !tab.url.includes('chrome://') &&
-//         !tab.url.includes('about:') &&
-//         !tab.url.includes('chrome-extension://')
-//       ) {
-//         chrome.scripting
-//           .executeScript({
-//             target: { tabId: tab.id, allFrames: true },
-//             files: ['src/pages/contentInjected/index.js'],
-//           })
-//           .then(() => {
-//             console.log('Content script injected into new window tab.');
-//             chrome.tabs.sendMessage(tab.id, { action }, () => {
-//               console.log(`Message sent to tab: ${tab.id}`);
-//             });
-//           })
-//           .catch(err =>
-//             console.error('Failed to inject content script: ', err),
-//           );
-//       }
-//     });
-//   });
-// });
+async function addEventIfRecording(eventInfo: EventInfo) {
+  const mode = await modeStorage.get();
+  if (mode === 'record') {
+    eventInfoStorage.addEvent(eventInfo);
+  }
+}
+
+chrome.windows.onCreated.addListener(window => {
+  chrome.tabs.query({ windowId: window.id }, async tabs => {
+    if (tabs.length > 0) {
+      const firstTab = tabs[0];
+      await addEventIfRecording({
+        type: 'window-created',
+        targetId: 'N/A',
+        tabId: firstTab.id,
+        windowId: window.id,
+        url: firstTab.url || 'N/A',
+      });
+    } else {
+      await addEventIfRecording({
+        type: 'window-created',
+        targetId: 'N/A',
+        tabId: -1,
+        windowId: window.id,
+        url: 'N/A',
+      });
+    }
+  });
+});
+
+chrome.tabs.onCreated.addListener(async tab => {
+  await addEventIfRecording({
+    type: 'tab-created',
+    targetId: 'N/A',
+    tabId: tab.id,
+    windowId: tab.windowId,
+    url: tab.url || 'N/A',
+  });
+});
+
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
+  await addEventIfRecording({
+    type: 'tab-removed',
+    targetId: 'N/A',
+    tabId: tabId,
+    windowId: removeInfo.windowId,
+    url: 'N/A',
+  });
+});
