@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-async function addEventIfRecording(eventInfo: EventInfo) {
+async function addEventIfRecording(eventInfo: Omit<EventInfo, 'uid'>) {
   const mode = await modeStorage.get();
   if (mode === 'record') {
     eventInfoStorage.addEvent(eventInfo);
