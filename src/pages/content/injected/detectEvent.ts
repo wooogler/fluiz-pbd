@@ -51,43 +51,12 @@ const handleClickEvent = (event: MouseEvent) => {
   });
 };
 
-const createRecordingBorder = () => {
-  const borderDiv = document.createElement('div');
-  borderDiv.setAttribute('id', 'recording-border');
-  borderDiv.style.position = 'fixed';
-  borderDiv.style.top = '0';
-  borderDiv.style.left = '0';
-  borderDiv.style.width = '100vw';
-  borderDiv.style.height = '100vh';
-  borderDiv.style.pointerEvents = 'none';
-  borderDiv.style.border = '5px solid red';
-  borderDiv.style.zIndex = '9999';
-  borderDiv.style.boxSizing = 'border-box';
-  return borderDiv;
-};
-
-const toggleRecordingBorder = (add: boolean) => {
-  const existingBorder = document.getElementById('recording-border');
-  if (add) {
-    if (!existingBorder) {
-      const borderDiv = createRecordingBorder();
-      document.body.appendChild(borderDiv);
-    }
-  } else {
-    if (existingBorder) {
-      document.body.removeChild(existingBorder);
-    }
-  }
-};
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
-    toggleRecordingBorder(true);
     document.addEventListener('click', handleClickEvent);
     console.log('Event tracking activated');
     sendResponse({ status: 'Event tracking activated' });
   } else if (message.action === 'deactivateEventTracking') {
-    toggleRecordingBorder(false);
     document.removeEventListener('click', handleClickEvent);
     console.log('Event tracking deactivated');
     sendResponse({ status: 'Event tracking deactivated' });

@@ -2,11 +2,14 @@ import { createRoot } from 'react-dom/client';
 import App from '@pages/content/ui/app';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 import injectedStyle from './injected.css?inline';
+import { ChakraProvider } from '@chakra-ui/react';
+import EmotionCacheProvider from './EmotionCacheProvider';
+import CustomChakraProvider from './CustomChakraProvider';
 
 refreshOnUpdate('pages/content');
 
 const root = document.createElement('div');
-root.id = 'chrome-extension-boilerplate-react-vite-content-view-root';
+root.id = 'content-view-root';
 
 document.body.append(root);
 
@@ -28,4 +31,10 @@ shadowRoot.appendChild(styleElement);
  * Please refer to the PR link above and go back to the contentStyle.css implementation, or raise a PR if you have a better way to improve it.
  */
 
-createRoot(rootIntoShadow).render(<App />);
+createRoot(rootIntoShadow).render(
+  <EmotionCacheProvider rootId={root.id}>
+    <CustomChakraProvider shadowRootId={rootIntoShadow.id}>
+      <App />
+    </CustomChakraProvider>
+  </EmotionCacheProvider>,
+);

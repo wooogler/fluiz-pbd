@@ -72,7 +72,10 @@ function injectContentScriptToTab(tabId: number) {
   chrome.scripting
     .executeScript({
       target: { tabId, allFrames: true },
-      files: ['src/pages/contentInjected/index.js'],
+      files: [
+        'src/pages/contentInjected/index.js',
+        'src/pages/contentUI/index.js',
+      ],
     })
     .then(async () => {
       console.log('Content script injected: ', tabId);
