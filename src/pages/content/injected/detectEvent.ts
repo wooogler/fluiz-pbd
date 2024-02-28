@@ -54,11 +54,7 @@ const handleClickEvent = (event: MouseEvent) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
     document.addEventListener('click', handleClickEvent);
-    console.log('Event tracking activated');
-    sendResponse({ status: 'Event tracking activated' });
   } else if (message.action === 'deactivateEventTracking') {
     document.removeEventListener('click', handleClickEvent);
-    console.log('Event tracking deactivated');
-    sendResponse({ status: 'Event tracking deactivated' });
   }
 });
