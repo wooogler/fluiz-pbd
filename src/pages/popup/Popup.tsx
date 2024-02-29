@@ -18,12 +18,15 @@ import {
   VStack,
   StackDivider,
   HStack,
+  Input,
+  IconButton,
 } from '@chakra-ui/react';
 import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import ScrollableTextBox from './components/ScrollableTextBox';
 
@@ -126,15 +129,24 @@ const Popup = () => {
           <Text>{`(${eventInfo.length} Events)`}</Text>
           <Spacer />
           <HStack align="center" spacing={2}>
-            <Button
+            <Input size="sm" placeholder="https://"></Input>
+            <Button size="sm" onClick={handleClickNewWindow}>
+              Go
+            </Button>
+            <IconButton
+              onClick={handleChangeMode}
               size="sm"
-              onClick={handleClickNewWindow}
-              leftIcon={<AddIcon />}>
-              Window
-            </Button>
-            <Button size="sm" onClick={handleChangeMode}>
-              {mode === 'record' ? 'Stop' : 'Record'}
-            </Button>
+              colorScheme={mode === 'record' ? 'red' : 'gray'}
+              variant={mode === 'record' ? 'solid' : 'outline'}
+              aria-label={mode === 'record' ? 'stop' : 'record'}
+              icon={
+                mode === 'record' ? (
+                  <PiStopFill />
+                ) : (
+                  <PiRecordFill color="red" />
+                )
+              }
+            />
             <Button
               size="sm"
               colorScheme="blue"
