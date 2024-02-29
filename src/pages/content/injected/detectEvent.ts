@@ -27,12 +27,10 @@ function getElementUniqueId(element: HTMLElement): string {
   return uniqueAttrs.join(',');
 }
 
-const handleClickEvent = (event: MouseEvent) => {
+function handleClickEvent(event: MouseEvent) {
   const targetElement = event.target as HTMLElement;
   const uniqueElementId = getElementUniqueId(targetElement);
   const currentPageUrl = document.location.href;
-
-  console.log('Clicked element: ', uniqueElementId);
 
   chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
     console.log(response);
@@ -49,12 +47,83 @@ const handleClickEvent = (event: MouseEvent) => {
       }
     }
   });
-};
+}
+
+function attachClickEventListners() {
+  document.querySelectorAll('a').forEach(anchorElement => {
+    anchorElement.addEventListener('click', handleClickEvent);
+  });
+  document.querySelectorAll('button').forEach(buttonElement => {
+    buttonElement.addEventListener('click', handleClickEvent);
+  });
+}
+
+function detachClickEventListners() {
+  document.querySelectorAll('a').forEach(anchorElement => {
+    anchorElement.removeEventListener('click', handleClickEvent);
+  });
+  document.querySelectorAll('button').forEach(buttonElement => {
+    buttonElement.removeEventListener('click', handleClickEvent);
+  });
+}
+
+function handleFocusInputEvent(event) {
+  const targetElement = event.target as HTMLInputElement;
+  targetElement.dataset.initialValue = targetElement.value;
+}
+
+function handleBlurInputEvent(event) {
+  const targetElement = event.target as HTMLInputElement;
+  const currentPageUrl = document.location.href;
+  const uniqueElementId = getElementUniqueId(targetElement);
+  const initialValue = targetElement.dataset.initialValue;
+  const finalValue = targetElement.value;
+
+  if (initialValue !== finalValue) {
+    chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+      if (response) {
+        const { tabId, windowId } = response;
+        eventInfoStorage.addEvent({
+          type: 'input',
+          targetId: uniqueElementId,
+          url: currentPageUrl,
+          tabId,
+          windowId,
+          inputValue: finalValue,
+        });
+      }
+    });
+  }
+}
+
+function attachInputEventListeners() {
+  document.querySelectorAll('input').forEach(inputElement => {
+    inputElement.addEventListener('focus', handleFocusInputEvent);
+    inputElement.addEventListener('blur', handleBlurInputEvent);
+  });
+  document.querySelectorAll('textarea').forEach(inputElement => {
+    inputElement.addEventListener('focus', handleFocusInputEvent);
+    inputElement.addEventListener('blur', handleBlurInputEvent);
+  });
+}
+
+function detachInputEventListeners() {
+  document.querySelectorAll('input').forEach(inputElement => {
+    inputElement.removeEventListener('focus', handleFocusInputEvent);
+    inputElement.removeEventListener('blur', handleBlurInputEvent);
+  });
+  document.querySelectorAll('textarea').forEach(inputElement => {
+    inputElement.removeEventListener('focus', handleFocusInputEvent);
+    inputElement.removeEventListener('blur', handleBlurInputEvent);
+  });
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
-    document.addEventListener('click', handleClickEvent);
+    attachClickEventListners();
+    attachInputEventListeners();
   } else if (message.action === 'deactivateEventTracking') {
-    document.removeEventListener('click', handleClickEvent);
+    detachClickEventListners();
+    detachInputEventListeners();
   }
 });

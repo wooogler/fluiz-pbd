@@ -205,7 +205,8 @@ const Popup = () => {
                 <Th w={50}>Tab ID</Th>
                 <Th w={100}>URL</Th>
                 <Th w={100}>Target ID</Th>
-                <Th w={50}>Action</Th>
+                <Th w={50}>Input Value</Th>
+                <Th w={20}>Action</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -220,6 +221,7 @@ const Popup = () => {
                   <Td>
                     <ScrollableTextBox maxW={100} text={item.targetId} />
                   </Td>
+                  <Td>{item.inputValue}</Td>
                   <Td>
                     <Button
                       size="sm"

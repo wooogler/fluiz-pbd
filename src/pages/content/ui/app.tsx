@@ -7,15 +7,16 @@ export default function App() {
   const mode = useStorage(modeStorage);
 
   return (
-    <Box>
+    <Box hidden={mode !== 'record'}>
       <Box
         position="fixed"
         top={0}
         left={0}
         w="100%"
-        h="4px"
+        h="3px"
         bg="red.500"
-        zIndex="9999"></Box>
+        zIndex="9999"
+      />
       <Flex
         position="fixed"
         top={0}
@@ -27,7 +28,6 @@ export default function App() {
         pointerEvents="none"
         bg="red.500"
         zIndex="9999"
-        hidden={mode !== 'record'}
         px={3}
         borderRadius="0 0 0.5rem 0.5rem">
         <Box mr={1}>
