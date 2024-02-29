@@ -98,6 +98,16 @@ function sendMessageToTab(tabId: number, message: { action: string }) {
   });
 }
 
+let firstTabIdInNewWindow: number | null = null;
+
+chrome.windows.onCreated.addListener(window => {
+  chrome.tabs.query({ windowId: window.id }, tabs => {
+    if (tabs.length > 0) {
+      firstTabIdInNewWindow = tabs[0].id;
+    }
+  });
+});
+
 // 새로운 탭이 생길 경우 해당 탭에 content script 주입
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (
@@ -107,13 +117,29 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     !tab.url.includes('about:') &&
     !tab.url.includes('chrome-extension://')
   ) {
-    injectContentScriptToTab(tab.id);
+    if (tabId === firstTabIdInNewWindow || firstTabIdInNewWindow === null) {
+      injectContentScriptToTab(tabId);
+      if (tabId === firstTabIdInNewWindow) {
+        firstTabIdInNewWindow = null;
+      }
+    }
   }
 });
 
-chrome.windows.onCreated.addListener(() => {
-  injectContentScriptToAllTabs();
-});
+// chrome.windows.onCreated.addListener(window => {
+//   chrome.tabs.query({ windowId: window.id }, tabs => {
+//     tabs.forEach(tab => {
+//       if (
+//         tab.url &&
+//         !tab.url.includes('chrome://') &&
+//         !tab.url.includes('about:') &&
+//         !tab.url.includes('chrome-extension://')
+//       ) {
+//         injectContentScriptToTab(tab.id);
+//       }
+//     });
+//   });
+// });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getContextId' && sender.tab) {
