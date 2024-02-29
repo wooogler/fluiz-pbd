@@ -1,5 +1,4 @@
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
-import modeStorage from '@root/src/shared/storages/modeStorage';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 
 refreshOnUpdate('pages/content/injected/detectElement');

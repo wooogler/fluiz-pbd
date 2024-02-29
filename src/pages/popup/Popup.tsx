@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, KeyboardEventHandler } from 'react';
 import '@pages/popup/Popup.css';
 import useStorage from '@src/shared/hooks/useStorage';
 import withSuspense from '@src/shared/hoc/withSuspense';
@@ -20,24 +20,31 @@ import {
   HStack,
   Input,
   IconButton,
+  Tooltip,
 } from '@chakra-ui/react';
 import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon } from '@chakra-ui/icons';
 import { PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import ScrollableTextBox from './components/ScrollableTextBox';
+import isURL from 'validator/lib/isURL';
 
 const Popup = () => {
+  const [inputUrl, setInputUrl] = useState('');
   const documentInfo = useStorage(documentInfoStorage);
   const eventInfo = useStorage(eventInfoStorage);
   const mode = useStorage(modeStorage);
 
-  useEffect(() => {
-    console.log(documentInfo);
-  }, [documentInfo]);
+  const isValidUrl = (url: string): boolean => {
+    return isURL(url);
+  };
+
+  const inputUrlBorderColor =
+    inputUrl !== '' && !isValidUrl(inputUrl) ? 'red.400' : 'gray.200';
+  const inputUrlBorderWidth = inputUrl !== '' && !isValidUrl(inputUrl) ? 2 : 1;
 
   const onDrop = acceptedFiles => {
     acceptedFiles.forEach(file => {
@@ -61,9 +68,18 @@ const Popup = () => {
     },
   });
 
+  const handleEnterNewWindow: KeyboardEventHandler<HTMLInputElement> = e => {
+    if (e.key === 'Enter') {
+      handleClickNewWindow();
+    }
+  };
+
   const handleClickNewWindow = () => {
+    const hasProtocol =
+      inputUrl.startsWith('http://') || inputUrl.startsWith('https://');
+    const windowUrl = hasProtocol ? inputUrl : `http://${inputUrl}`;
     chrome.windows.create({
-      url: 'about:blank',
+      url: windowUrl,
       type: 'normal',
     });
   };
@@ -122,17 +138,42 @@ const Popup = () => {
         )}
       </VStack>
       <VStack w="100%" flex={1} overflowY="hidden">
-        <Flex w="100%" align="center">
+        <Flex w="100%" align="center" py={2}>
           <Text fontSize="xl" fontWeight="bold" mr={2}>
             Event List
           </Text>
           <Text>{`(${eventInfo.length} Events)`}</Text>
           <Spacer />
           <HStack align="center" spacing={2}>
-            <Input size="sm" placeholder="https://"></Input>
-            <Button size="sm" onClick={handleClickNewWindow}>
-              Go
-            </Button>
+            <Tooltip
+              label="Start recording to use this"
+              isDisabled={mode === 'record'}
+              hasArrow
+              placement="bottom">
+              <Flex>
+                <Input
+                  size="sm"
+                  w="15rem"
+                  borderRadius="0.375rem 0 0 0.375rem"
+                  placeholder="https://"
+                  value={inputUrl}
+                  onChange={e => setInputUrl(e.target.value)}
+                  borderColor={inputUrlBorderColor}
+                  borderWidth={inputUrlBorderWidth}
+                  _hover={{ borderColor: inputUrlBorderColor, borderWidth: 2 }}
+                  _focus={{ borderColor: inputUrlBorderColor, borderWidth: 2 }}
+                  disabled={mode !== 'record'}
+                  onKeyDown={handleEnterNewWindow}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleClickNewWindow}
+                  borderRadius="0 0.375rem 0.375rem 0"
+                  isDisabled={!isValidUrl(inputUrl)}>
+                  Go
+                </Button>
+              </Flex>
+            </Tooltip>
             <IconButton
               onClick={handleChangeMode}
               size="sm"
@@ -151,7 +192,7 @@ const Popup = () => {
               size="sm"
               colorScheme="blue"
               onClick={() => eventInfoStorage.clearEvents()}>
-              Clear
+              Clear Events
             </Button>
           </HStack>
         </Flex>
