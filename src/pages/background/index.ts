@@ -78,7 +78,6 @@ function injectContentScriptToTab(tabId: number) {
       ],
     })
     .then(async () => {
-      console.log('Content script injected: ', tabId);
       const mode = await modeStorage.get();
       const action =
         mode === 'record' ? 'activateEventTracking' : 'deactivateEventTracking';
@@ -90,19 +89,18 @@ function injectContentScriptToTab(tabId: number) {
 function sendMessageToTab(tabId: number, message: { action: string }) {
   chrome.tabs.sendMessage(tabId, message, () => {
     if (chrome.runtime.lastError) {
-      console.error(
-        'Message sending failed: ',
-        chrome.runtime.lastError.message,
-      );
+      console.log('Message sending failed: ', chrome.runtime.lastError.message);
     } else {
       console.log(`Message sent to tab: ${tabId}`);
-      console.log(message);
     }
   });
 }
 
-// 새로운 탭이 생길 경우 해당 탭에 content script 주입
+// 새로운 탭이 생길 경우 해당 탭에 content script 주입 + 탭 URL이 변경될 경우 저장소 업데이트
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    tabUrls[tabId] = changeInfo.url;
+  }
   if (
     changeInfo.status === 'complete' &&
     tab.url &&
@@ -143,43 +141,107 @@ async function addEventIfRecording(eventInfo: Omit<EventInfo, 'uid'>) {
 
 chrome.windows.onCreated.addListener(window => {
   chrome.tabs.query({ windowId: window.id }, async tabs => {
-    if (tabs.length > 0) {
+    if (
+      tabs.length > 0 &&
+      !tabs[0].pendingUrl.includes('chrome://') &&
+      !tabs[0].pendingUrl.includes('about:') &&
+      !tabs[0].pendingUrl.includes('chrome-extension://')
+    ) {
       const firstTab = tabs[0];
       await addEventIfRecording({
         type: 'window-created',
         targetId: 'N/A',
         tabId: firstTab.id,
         windowId: window.id,
-        url: firstTab.url || 'N/A',
-      });
-    } else {
-      await addEventIfRecording({
-        type: 'window-created',
-        targetId: 'N/A',
-        tabId: -1,
-        windowId: window.id,
-        url: 'N/A',
+        url: firstTab.pendingUrl,
       });
     }
   });
 });
 
+const tabUrls = {};
+
 chrome.tabs.onCreated.addListener(async tab => {
-  await addEventIfRecording({
-    type: 'tab-created',
-    targetId: 'N/A',
-    tabId: tab.id,
-    windowId: tab.windowId,
-    url: tab.url || 'N/A',
-  });
+  if (
+    tab.pendingUrl &&
+    !tab.pendingUrl.includes('chrome://') &&
+    !tab.pendingUrl.includes('about:') &&
+    !tab.pendingUrl.includes('chrome-extension://')
+  ) {
+    await addEventIfRecording({
+      type: 'tab-created',
+      targetId: 'N/A',
+      tabId: tab.id,
+      windowId: tab.windowId,
+      url: tab.pendingUrl,
+    });
+    tabUrls[tab.id] = tab.pendingUrl;
+  }
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
-  await addEventIfRecording({
-    type: 'tab-removed',
-    targetId: 'N/A',
-    tabId: tabId,
-    windowId: removeInfo.windowId,
-    url: 'N/A',
-  });
+  const tabUrl = tabUrls[tabId];
+  if (
+    tabUrl &&
+    !tabUrl.includes('chrome://') &&
+    !tabUrl.includes('about:') &&
+    !tabUrl.includes('chrome-extension://')
+  ) {
+    await addEventIfRecording({
+      type: 'tab-removed',
+      targetId: 'N/A',
+      tabId: tabId,
+      windowId: removeInfo.windowId,
+      url: 'N/A',
+    });
+  }
+  delete tabUrls[tabId];
 });
+
+// 브라우저에서 URL 이동이 발생했을 경우 이벤트 저장소에 저장
+chrome.webNavigation.onCommitted.addListener(
+  details => {
+    if (details.frameId === 0) {
+      if (
+        details.transitionType === 'typed' ||
+        details.transitionType === 'auto_bookmark'
+      ) {
+        chrome.tabs.get(details.tabId, async tab => {
+          if (tab) {
+            await addEventIfRecording({
+              type: 'navigation-url',
+              targetId: 'N/A',
+              tabId: tab.id,
+              windowId: tab.windowId,
+              url: details.url,
+            });
+          }
+        });
+      }
+    }
+  },
+  { url: [{ schemes: ['http', 'https'] }] },
+);
+
+// 브라우저에서 뒤로 가기/앞으로 가기를 했을 경우 이벤트 저장소에 저장
+chrome.webNavigation.onHistoryStateUpdated.addListener(
+  details => {
+    if (
+      details.frameId === 0 &&
+      details.transitionQualifiers.includes('forward_back')
+    ) {
+      chrome.tabs.get(details.tabId, async tab => {
+        if (tab) {
+          await addEventIfRecording({
+            type: 'navigation-back-forward',
+            targetId: 'N/A',
+            tabId: tab.id,
+            windowId: tab.windowId,
+            url: details.url,
+          });
+        }
+      });
+    }
+  },
+  { url: [{ schemes: ['http', 'https'] }] },
+);

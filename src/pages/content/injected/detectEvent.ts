@@ -12,6 +12,7 @@ function getElementUniqueId(element: HTMLElement): string {
     'type',
     'aria-label',
     'href',
+    'src',
   ];
   const uniqueAttrs: string[] = [];
   if (element.textContent) {
@@ -67,13 +68,39 @@ function detachClickEventListners() {
   });
 }
 
+let currentFocusedInput: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+function handleInputEvent(event) {
+  const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
+  targetElement.dataset.valueChanged = 'true';
+}
+
 function handleFocusInputEvent(event) {
-  const targetElement = event.target as HTMLInputElement;
+  const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
   targetElement.dataset.initialValue = targetElement.value;
+  targetElement.addEventListener('input', handleInputEvent, { once: true });
 }
 
 function handleBlurInputEvent(event) {
-  const targetElement = event.target as HTMLInputElement;
+  const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const valueChanged = event.target.dataset.valueChanged === 'true';
+
+  if (valueChanged) {
+    saveInputValue(targetElement);
+  }
+  targetElement.removeEventListener('input', handleInputEvent);
+  delete targetElement.dataset.valueChanged;
+  delete targetElement.dataset.initialValue;
+}
+
+function handlePageTransition() {
+  if (currentFocusedInput) {
+    saveInputValue(currentFocusedInput);
+    currentFocusedInput = null;
+  }
+}
+
+function saveInputValue(targetElement: HTMLInputElement | HTMLTextAreaElement) {
   const currentPageUrl = document.location.href;
   const uniqueElementId = getElementUniqueId(targetElement);
   const initialValue = targetElement.dataset.initialValue;
@@ -97,25 +124,22 @@ function handleBlurInputEvent(event) {
 }
 
 function attachInputEventListeners() {
-  document.querySelectorAll('input').forEach(inputElement => {
+  document.querySelectorAll('input, textarea').forEach(inputElement => {
     inputElement.addEventListener('focus', handleFocusInputEvent);
     inputElement.addEventListener('blur', handleBlurInputEvent);
   });
-  document.querySelectorAll('textarea').forEach(inputElement => {
-    inputElement.addEventListener('focus', handleFocusInputEvent);
-    inputElement.addEventListener('blur', handleBlurInputEvent);
-  });
+  window.addEventListener('beforeunload', handlePageTransition);
+  window.addEventListener('popstate', handlePageTransition);
 }
 
 function detachInputEventListeners() {
-  document.querySelectorAll('input').forEach(inputElement => {
+  document.querySelectorAll('input, textarea').forEach(inputElement => {
     inputElement.removeEventListener('focus', handleFocusInputEvent);
     inputElement.removeEventListener('blur', handleBlurInputEvent);
+    inputElement.removeEventListener('input', handleInputEvent);
   });
-  document.querySelectorAll('textarea').forEach(inputElement => {
-    inputElement.removeEventListener('focus', handleFocusInputEvent);
-    inputElement.removeEventListener('blur', handleBlurInputEvent);
-  });
+  window.removeEventListener('beforeunload', handlePageTransition);
+  window.removeEventListener('popstate', handlePageTransition);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

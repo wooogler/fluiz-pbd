@@ -5,7 +5,8 @@ export type EventInfo = {
   type:
     | 'click'
     | 'input'
-    | 'access'
+    | 'navigation-url'
+    | 'navigation-back-forward'
     | 'tab-created'
     | 'window-created'
     | 'tab-removed'
