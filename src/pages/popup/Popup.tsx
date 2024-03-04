@@ -27,7 +27,7 @@ import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import { DeleteIcon } from '@chakra-ui/icons';
-import { PiRecordFill, PiStopFill } from 'react-icons/pi';
+import { PiPlayFill, PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import ScrollableTextBox from './components/ScrollableTextBox';
 import isURL from 'validator/lib/isURL';
@@ -188,6 +188,24 @@ const Popup = () => {
                 )
               }
             />
+            <Tooltip
+              label={
+                eventInfo.length === 0
+                  ? 'No events to play'
+                  : 'Stop recording to play events'
+              }
+              isDisabled={!(eventInfo.length === 0 || mode === 'record')}
+              hasArrow
+              placement="bottom">
+              <IconButton
+                size="sm"
+                variant="outline"
+                aria-label="play"
+                isDisabled={eventInfo.length === 0 || mode === 'record'}
+                icon={<PiPlayFill />}
+              />
+            </Tooltip>
+
             <Button
               size="sm"
               colorScheme="blue"
