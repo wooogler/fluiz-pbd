@@ -2,6 +2,7 @@ import eventInfoStorage, {
   EventInfo,
 } from '@root/src/shared/storages/eventInfoStorage';
 import modeStorage from '@root/src/shared/storages/modeStorage';
+import replayInfoStorage from '@root/src/shared/storages/replayInfoStorage';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
 
@@ -112,7 +113,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === 'getContextId' && sender.tab) {
     sendResponse({
       tabId: sender.tab.id,
@@ -129,6 +130,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       });
     });
+  } else if (message.action === 'replayEvents') {
+    const eventInfo = await eventInfoStorage.get();
+    for (const event of eventInfo) {
+      if (event.type === 'window-created') {
+        await new Promise<void>((resolve, reject) => {
+          chrome.windows.create(
+            { url: event.url, type: 'normal' },
+            async window => {
+              if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+                reject(chrome.runtime.lastError);
+              } else {
+                await replayInfoStorage.addReplaySession({
+                  windowId: window.id,
+                  tabId: window.tabs[0].id,
+                });
+                //새로 만든 윈도우가 완전히 로드될 때까지 대기
+                chrome.tabs.onUpdated.addListener(
+                  function onTabUpdated(tabId, changeInfo) {
+                    if (
+                      tabId === window.tabs[0].id &&
+                      changeInfo.status === 'complete'
+                    ) {
+                      chrome.tabs.onUpdated.removeListener(onTabUpdated);
+                      resolve();
+                    }
+                  },
+                );
+              }
+            },
+          );
+        });
+      } else {
+        const replayInfo = await replayInfoStorage.get();
+        if (replayInfo.length > 0) {
+          chrome.tabs.sendMessage(replayInfo[0].tabId, {
+            action: 'replayEvent',
+            event: event,
+          });
+        }
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
 });
 

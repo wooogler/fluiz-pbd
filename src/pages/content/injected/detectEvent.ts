@@ -3,7 +3,7 @@ import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 
 refreshOnUpdate('pages/content/injected/detectElement');
 
-function getElementUniqueId(element: HTMLElement): string {
+export function getElementUniqueId(element: HTMLElement): string {
   const representativeAttrs = [
     'id',
     'class',
@@ -15,10 +15,10 @@ function getElementUniqueId(element: HTMLElement): string {
     'src',
   ];
   const uniqueAttrs: string[] = [];
+  uniqueAttrs.push(element.tagName.toLowerCase());
   if (element.textContent) {
     uniqueAttrs.push(element.textContent.trim().slice(0, 20));
   }
-  uniqueAttrs.push(element.tagName.toLowerCase());
   for (const attr of representativeAttrs) {
     const attrValue = element.getAttribute(attr);
     if (attrValue) {
@@ -28,72 +28,73 @@ function getElementUniqueId(element: HTMLElement): string {
   return uniqueAttrs.join(',');
 }
 
-function handleClickEvent(event: MouseEvent) {
+function detectClickEvent(event: MouseEvent) {
   const targetElement = event.target as HTMLElement;
-  const uniqueElementId = getElementUniqueId(targetElement);
-  const currentPageUrl = document.location.href;
+  const isClickable =
+    window.getComputedStyle(targetElement).cursor === 'pointer' ||
+    targetElement.hasAttribute('tabindex') ||
+    targetElement.tagName.toLowerCase() === 'button' ||
+    targetElement.closest('a') !== null;
 
-  chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
-    console.log(response);
-    if (response) {
-      const { tabId, windowId } = response;
-      if (uniqueElementId) {
-        eventInfoStorage.addEvent({
-          type: 'click',
-          targetId: uniqueElementId,
-          url: currentPageUrl,
-          tabId,
-          windowId,
-        });
+  if (isClickable) {
+    const uniqueElementId = getElementUniqueId(targetElement);
+    const currentPageUrl = document.location.href;
+
+    chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+      if (response) {
+        const { tabId, windowId } = response;
+        if (uniqueElementId) {
+          eventInfoStorage.addEvent({
+            type: 'click',
+            targetId: uniqueElementId,
+            url: currentPageUrl,
+            tabId,
+            windowId,
+          });
+        }
       }
-    }
+    });
+  }
+}
+
+function attachClickEventListeners() {
+  document.querySelectorAll('*').forEach(element => {
+    element.addEventListener('click', detectClickEvent, true);
   });
 }
 
-function attachClickEventListners() {
-  document.querySelectorAll('a').forEach(anchorElement => {
-    anchorElement.addEventListener('click', handleClickEvent);
-  });
-  document.querySelectorAll('button').forEach(buttonElement => {
-    buttonElement.addEventListener('click', handleClickEvent);
-  });
-}
-
-function detachClickEventListners() {
-  document.querySelectorAll('a').forEach(anchorElement => {
-    anchorElement.removeEventListener('click', handleClickEvent);
-  });
-  document.querySelectorAll('button').forEach(buttonElement => {
-    buttonElement.removeEventListener('click', handleClickEvent);
+function detachClickEventListeners() {
+  document.querySelectorAll('*').forEach(element => {
+    element.removeEventListener('click', detectClickEvent, true);
   });
 }
 
 let currentFocusedInput: HTMLInputElement | HTMLTextAreaElement | null = null;
 
-function handleInputEvent(event) {
+function detectInputEvent(event) {
   const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
   targetElement.dataset.valueChanged = 'true';
 }
 
-function handleFocusInputEvent(event) {
+function detectFocusInputEvent(event) {
   const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
   targetElement.dataset.initialValue = targetElement.value;
-  targetElement.addEventListener('input', handleInputEvent, { once: true });
+  targetElement.addEventListener('input', detectInputEvent, { once: true });
 }
 
-function handleBlurInputEvent(event) {
+function detectBlurInputEvent(event) {
   const targetElement = event.target as HTMLInputElement | HTMLTextAreaElement;
   const valueChanged = event.target.dataset.valueChanged === 'true';
 
   if (valueChanged) {
     saveInputValue(targetElement);
   }
-  targetElement.removeEventListener('input', handleInputEvent);
+  targetElement.removeEventListener('input', detectInputEvent);
   delete targetElement.dataset.valueChanged;
   delete targetElement.dataset.initialValue;
 }
 
-function handlePageTransition() {
+function detectPageTransition() {
   if (currentFocusedInput) {
     saveInputValue(currentFocusedInput);
     currentFocusedInput = null;
@@ -125,29 +126,29 @@ function saveInputValue(targetElement: HTMLInputElement | HTMLTextAreaElement) {
 
 function attachInputEventListeners() {
   document.querySelectorAll('input, textarea').forEach(inputElement => {
-    inputElement.addEventListener('focus', handleFocusInputEvent);
-    inputElement.addEventListener('blur', handleBlurInputEvent);
+    inputElement.addEventListener('focus', detectFocusInputEvent);
+    inputElement.addEventListener('blur', detectBlurInputEvent);
   });
-  window.addEventListener('beforeunload', handlePageTransition);
-  window.addEventListener('popstate', handlePageTransition);
+  window.addEventListener('beforeunload', detectPageTransition);
+  window.addEventListener('popstate', detectPageTransition);
 }
 
 function detachInputEventListeners() {
   document.querySelectorAll('input, textarea').forEach(inputElement => {
-    inputElement.removeEventListener('focus', handleFocusInputEvent);
-    inputElement.removeEventListener('blur', handleBlurInputEvent);
-    inputElement.removeEventListener('input', handleInputEvent);
+    inputElement.removeEventListener('focus', detectFocusInputEvent);
+    inputElement.removeEventListener('blur', detectBlurInputEvent);
+    inputElement.removeEventListener('input', detectInputEvent);
   });
-  window.removeEventListener('beforeunload', handlePageTransition);
-  window.removeEventListener('popstate', handlePageTransition);
+  window.removeEventListener('beforeunload', detectPageTransition);
+  window.removeEventListener('popstate', detectPageTransition);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
-    attachClickEventListners();
+    attachClickEventListeners();
     attachInputEventListeners();
   } else if (message.action === 'deactivateEventTracking') {
-    detachClickEventListners();
+    detachClickEventListeners();
     detachInputEventListeners();
   }
 });

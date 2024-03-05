@@ -31,6 +31,7 @@ import { PiPlayFill, PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import ScrollableTextBox from './components/ScrollableTextBox';
 import isURL from 'validator/lib/isURL';
+import replayInfoStorage from '@root/src/shared/storages/replayInfoStorage';
 
 const Popup = () => {
   const [inputUrl, setInputUrl] = useState('');
@@ -82,6 +83,11 @@ const Popup = () => {
       url: windowUrl,
       type: 'normal',
     });
+  };
+
+  const handleClickReplay = () => {
+    modeStorage.change('replay');
+    chrome.runtime.sendMessage({ action: 'replayEvents' });
   };
 
   const handleChangeMode = () => {
@@ -203,6 +209,7 @@ const Popup = () => {
                 aria-label="play"
                 isDisabled={eventInfo.length === 0 || mode === 'record'}
                 icon={<PiPlayFill />}
+                onClick={handleClickReplay}
               />
             </Tooltip>
 

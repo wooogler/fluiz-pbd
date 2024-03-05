@@ -9,3 +9,4 @@
  */
 import('@pages/content/injected/toggleTheme');
 import('@root/src/pages/content/injected/detectEvent');
+import('@root/src/pages/content/injected/replayEvent');

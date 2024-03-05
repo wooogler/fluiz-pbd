@@ -8,6 +8,7 @@ export default function App() {
 
   return (
     <Box hidden={mode !== 'record'}>
+      {/* <Box> */}
       <Box
         position="fixed"
         top={0}
