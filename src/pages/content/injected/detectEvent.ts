@@ -30,11 +30,11 @@ export function getElementUniqueId(element: HTMLElement): string {
 
 function detectClickEvent(event: MouseEvent) {
   const targetElement = event.target as HTMLElement;
+  console.log(targetElement, 'targetElement');
   const isClickable =
     window.getComputedStyle(targetElement).cursor === 'pointer' ||
-    targetElement.hasAttribute('tabindex') ||
-    targetElement.tagName.toLowerCase() === 'button' ||
-    targetElement.closest('a') !== null;
+    targetElement.hasAttribute('tabindex');
+  console.log('isClickable', isClickable);
 
   if (isClickable) {
     const uniqueElementId = getElementUniqueId(targetElement);
@@ -58,15 +58,11 @@ function detectClickEvent(event: MouseEvent) {
 }
 
 function attachClickEventListeners() {
-  document.querySelectorAll('*').forEach(element => {
-    element.addEventListener('click', detectClickEvent, true);
-  });
+  document.body.addEventListener('click', detectClickEvent);
 }
 
 function detachClickEventListeners() {
-  document.querySelectorAll('*').forEach(element => {
-    element.removeEventListener('click', detectClickEvent, true);
-  });
+  document.body.removeEventListener('click', detectClickEvent);
 }
 
 let currentFocusedInput: HTMLInputElement | HTMLTextAreaElement | null = null;

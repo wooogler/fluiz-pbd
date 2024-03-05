@@ -8,10 +8,12 @@ import CustomChakraProvider from './CustomChakraProvider';
 
 refreshOnUpdate('pages/content');
 
+const mainBody = document.body;
+
 const root = document.createElement('div');
 root.id = 'content-view-root';
 
-document.body.append(root);
+mainBody.append(root);
 
 const rootIntoShadow = document.createElement('div');
 rootIntoShadow.id = 'shadow-root';
