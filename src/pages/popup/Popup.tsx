@@ -33,7 +33,7 @@ import ScrollableTextBox from './components/ScrollableTextBox';
 import isURL from 'validator/lib/isURL';
 
 const Popup = () => {
-  const [inputUrl, setInputUrl] = useState('https://etax.seoul.go.kr');
+  const [inputUrl, setInputUrl] = useState('https://www.naver.com');
   const documentInfo = useStorage(documentInfoStorage);
   const eventInfo = useStorage(eventInfoStorage);
   const mode = useStorage(modeStorage);

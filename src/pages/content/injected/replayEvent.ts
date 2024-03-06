@@ -33,6 +33,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (!elementFound) {
         console.log('Element not found', event.targetId);
       }
+    } else if (event.type === 'input') {
+      const elements = document.querySelectorAll(event.targetId);
+      elements.forEach(element => {
+        const uniqueId = getElementUniqueId(element as HTMLElement);
+        if (uniqueId === event.targetId) {
+          (element as HTMLInputElement).value = event.inputValue;
+        }
+      });
     }
   }
 });
