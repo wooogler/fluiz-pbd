@@ -13,6 +13,7 @@ export function getElementUniqueId(element: HTMLElement): string {
     'aria-label',
     'href',
     'src',
+    'style',
   ];
   const uniqueAttrs: string[] = [];
   uniqueAttrs.push(element.tagName.toLowerCase());
@@ -20,8 +21,11 @@ export function getElementUniqueId(element: HTMLElement): string {
     uniqueAttrs.push(element.textContent.trim().slice(0, 20));
   }
   for (const attr of representativeAttrs) {
-    const attrValue = element.getAttribute(attr);
+    let attrValue = element.getAttribute(attr);
     if (attrValue) {
+      if (attrValue.length > 20) {
+        attrValue = attrValue.slice(0, 15);
+      }
       uniqueAttrs.push(`${attr}=${attrValue}`);
     }
   }
@@ -58,11 +62,11 @@ function detectClickEvent(event: MouseEvent) {
 }
 
 function attachClickEventListeners() {
-  document.body.addEventListener('click', detectClickEvent);
+  document.body.addEventListener('click', detectClickEvent, true);
 }
 
 function detachClickEventListeners() {
-  document.body.removeEventListener('click', detectClickEvent);
+  document.body.removeEventListener('click', detectClickEvent, true);
 }
 
 let currentFocusedInput: HTMLInputElement | HTMLTextAreaElement | null = null;
