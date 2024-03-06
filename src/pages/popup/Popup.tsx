@@ -50,10 +50,14 @@ const Popup = () => {
     acceptedFiles.forEach(file => {
       Papa.parse(file, {
         complete: result => {
-          console.log(result.data);
-          documentInfoStorage.newInfo(result.data);
+          const dict = {};
+          result.data.forEach(item => {
+            const [key, value] = item;
+            dict[key] = value;
+          });
+          console.log(dict);
+          documentInfoStorage.newInfo(dict);
         },
-        header: true,
         skipEmptyLines: true,
       });
     });
@@ -121,21 +125,19 @@ const Popup = () => {
           <input {...getInputProps()} />
           <Text>여기에 파일을 가져다놓거나 클릭하여 파일을 선택하세요.</Text>
         </Box>
-        {documentInfo.length > 0 && (
+        {Object.keys(documentInfo).length > 0 && (
           <Table variant="simple" size="sm">
             <Thead>
               <Tr>
-                {Object.keys(documentInfo[0]).map(header => (
-                  <Th key={header}>{header}</Th>
-                ))}
+                <Th>Key</Th>
+                <Th>Value</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {documentInfo.map((row, index) => (
+              {Object.entries(documentInfo).map(([key, value], index) => (
                 <Tr key={index}>
-                  {Object.keys(row).map(cell => (
-                    <Td key={cell}>{row[cell]}</Td>
-                  ))}
+                  <Td>{key}</Td>
+                  <Td>{value}</Td>
                 </Tr>
               ))}
             </Tbody>
@@ -235,7 +237,7 @@ const Popup = () => {
             </Thead>
             <Tbody>
               {eventInfo.map(item => (
-                <Tr key={item.targetId}>
+                <Tr key={item.uid}>
                   <Td>{item.type}</Td>
                   <Td>{item.windowId}</Td>
                   <Td>{item.tabId}</Td>
@@ -245,7 +247,21 @@ const Popup = () => {
                   <Td>
                     <ScrollableTextBox maxW={100} text={item.targetId} />
                   </Td>
-                  <Td>{item.inputValue}</Td>
+                  {/* <Td>{item.inputValue}</Td> */}
+                  <Td>
+                    {item.type === 'input' && (
+                      <Input
+                        size="sm"
+                        value={item.inputValue}
+                        onChange={event => {
+                          eventInfoStorage.editEventInputValue(
+                            item.uid,
+                            event.target.value,
+                          );
+                        }}
+                      />
+                    )}
+                  </Td>
                   <Td>
                     <Button
                       size="sm"

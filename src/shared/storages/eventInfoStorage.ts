@@ -20,6 +20,7 @@ export type EventInfo = {
 
 type EventInfoStorage = BaseStorage<EventInfo[]> & {
   addEvent: (event: Omit<EventInfo, 'uid'>) => Promise<void>;
+  editEventInputValue: (eventId: string, inputValue: string) => Promise<void>;
   clearEvents: () => Promise<void>;
   deleteEvent: (eventId: string) => Promise<void>;
 };
@@ -38,6 +39,15 @@ const eventInfoStorage: EventInfoStorage = {
   },
   clearEvents: async () => {
     await storage.set([]);
+  },
+  editEventInputValue: async (eventId, inputValue) => {
+    const events = await storage.get();
+    const eventIndex = events.findIndex(event => event.uid === eventId);
+    if (eventIndex === -1) {
+      return;
+    }
+    events[eventIndex].inputValue = inputValue;
+    await storage.set(events);
   },
   deleteEvent: async eventId => {
     await storage.set(

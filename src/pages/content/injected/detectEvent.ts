@@ -153,6 +153,23 @@ function saveInputValue(targetElement: HTMLInputElement | HTMLTextAreaElement) {
   }
 }
 
+// 이미 focus되어 있는 경우 currentFocusedInput에 저장
+(() => {
+  attachInputEventListeners();
+
+  const focusedElement = document.activeElement as
+    | HTMLInputElement
+    | HTMLTextAreaElement;
+  if (
+    focusedElement.tagName === 'INPUT' ||
+    focusedElement.tagName === 'TEXTAREA'
+  ) {
+    console.log(focusedElement);
+    detectFocusInputEvent({ target: focusedElement });
+    currentFocusedInput = focusedElement;
+  }
+})();
+
 function attachInputEventListeners() {
   document.querySelectorAll('input, textarea').forEach(inputElement => {
     inputElement.addEventListener('focus', detectFocusInputEvent);
