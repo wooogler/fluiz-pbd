@@ -31,10 +31,9 @@ import { PiPlayFill, PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import ScrollableTextBox from './components/ScrollableTextBox';
 import isURL from 'validator/lib/isURL';
-import replayInfoStorage from '@root/src/shared/storages/replayInfoStorage';
 
 const Popup = () => {
-  const [inputUrl, setInputUrl] = useState('');
+  const [inputUrl, setInputUrl] = useState('https://etax.seoul.go.kr');
   const documentInfo = useStorage(documentInfoStorage);
   const eventInfo = useStorage(eventInfoStorage);
   const mode = useStorage(modeStorage);
@@ -175,7 +174,7 @@ const Popup = () => {
                   size="sm"
                   onClick={handleClickNewWindow}
                   borderRadius="0 0.375rem 0.375rem 0"
-                  isDisabled={!isValidUrl(inputUrl)}>
+                  isDisabled={mode !== 'record' || !isValidUrl(inputUrl)}>
                   Go
                 </Button>
               </Flex>

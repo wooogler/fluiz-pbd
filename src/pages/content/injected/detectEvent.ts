@@ -3,6 +3,27 @@ import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 
 refreshOnUpdate('pages/content/injected/detectElement');
 
+function getElementXPath(element: HTMLElement): string {
+  // 해당 요소의 상대적인 XPath를 구하는 함수
+  const getXPath = (elm: HTMLElement): string | null => {
+    if (elm.id !== '') return `id("${elm.id}")`;
+    if (elm === document.body) return elm.tagName;
+
+    let idx = 1;
+    for (
+      let sib = elm.previousElementSibling;
+      sib;
+      sib = sib.previousElementSibling
+    ) {
+      if (sib.tagName === elm.tagName) idx++;
+    }
+
+    return `${getXPath(elm.parentElement as HTMLElement)}/${elm.tagName}[${idx}]`;
+  };
+
+  return getXPath(element);
+}
+
 export function getElementUniqueId(element: HTMLElement): string {
   const representativeAttrs = [
     'id',
@@ -13,21 +34,29 @@ export function getElementUniqueId(element: HTMLElement): string {
     'aria-label',
     'href',
     'src',
-    'style',
   ];
   const uniqueAttrs: string[] = [];
   uniqueAttrs.push(element.tagName.toLowerCase());
   if (element.textContent) {
     uniqueAttrs.push(element.textContent.trim().slice(0, 20));
   }
+  let classValue: string | null = null;
   for (const attr of representativeAttrs) {
     let attrValue = element.getAttribute(attr);
     if (attrValue) {
-      if (attrValue.length > 20) {
+      if (attr !== 'style' && attrValue.length > 15) {
         attrValue = attrValue.slice(0, 15);
       }
       uniqueAttrs.push(`${attr}=${attrValue}`);
+      if (attr === 'class') {
+        classValue = attrValue;
+      }
     }
+  }
+
+  if (classValue.startsWith('kpd-')) {
+    const relativeXPath = getElementXPath(element);
+    uniqueAttrs.push(`xpath=${relativeXPath}`);
   }
   return uniqueAttrs.join(',');
 }
