@@ -54,7 +54,7 @@ export function getElementUniqueId(element: HTMLElement): string {
     }
   }
 
-  if (classValue.startsWith('kpd-')) {
+  if (classValue && classValue.startsWith('kpd-')) {
     const relativeXPath = getElementXPath(element);
     uniqueAttrs.push(`xpath=${relativeXPath}`);
   }
