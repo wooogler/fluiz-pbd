@@ -166,9 +166,19 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       } else {
         const replayInfo = await replayInfoStorage.get();
         if (replayInfo.length > 0) {
-          chrome.tabs.sendMessage(replayInfo[0].tabId, {
-            action: 'replayEvent',
-            event: event,
+          // chrome.tabs.sendMessage를 비동기 처리 후 응답 받기
+          await new Promise(resolve => {
+            chrome.tabs.sendMessage(
+              replayInfo[0].tabId,
+              {
+                action: 'replayEvent',
+                event: event,
+              },
+              response => {
+                // 응답을 처리하고 1초 후에 resolve 호출
+                setTimeout(resolve, 1000); // 여기에서 1초 대기
+              },
+            );
           });
         }
       }
