@@ -154,6 +154,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
                       changeInfo.status === 'complete'
                     ) {
                       chrome.tabs.onUpdated.removeListener(onTabUpdated);
+                      eventInfoStorage.replayedEvent(event.uid);
                       resolve();
                     }
                   },
@@ -198,6 +199,7 @@ chrome.windows.onCreated.addListener(window => {
         tabId: firstTab.id,
         windowId: window.id,
         url: firstTab.pendingUrl,
+        replayed: false,
       });
     }
   });
@@ -218,6 +220,7 @@ chrome.tabs.onCreated.addListener(async tab => {
       tabId: tab.id,
       windowId: tab.windowId,
       url: tab.pendingUrl,
+      replayed: false,
     });
     tabUrls[tab.id] = tab.pendingUrl;
   }
@@ -237,6 +240,7 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
       tabId: tabId,
       windowId: removeInfo.windowId,
       url: 'N/A',
+      replayed: false,
     });
   }
   delete tabUrls[tabId];
@@ -258,6 +262,7 @@ chrome.webNavigation.onCommitted.addListener(
               tabId: tab.id,
               windowId: tab.windowId,
               url: details.url,
+              replayed: false,
             });
           }
         });
@@ -282,6 +287,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
             tabId: tab.id,
             windowId: tab.windowId,
             url: details.url,
+            replayed: false,
           });
         }
       });

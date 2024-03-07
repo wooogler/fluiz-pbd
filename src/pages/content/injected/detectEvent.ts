@@ -28,6 +28,7 @@ export function getElementUniqueId(element: HTMLElement): string {
   const representativeAttrs = [
     'id',
     'class',
+    'type',
     'name',
     'role',
     'type',
@@ -67,9 +68,12 @@ function detectClickEvent(event: MouseEvent) {
   const isClickable =
     window.getComputedStyle(targetElement).cursor === 'pointer' ||
     targetElement.hasAttribute('tabindex');
-  console.log('isClickable', isClickable);
 
-  if (isClickable) {
+  const isInputable =
+    window.getComputedStyle(targetElement).cursor === 'text' ||
+    targetElement.tagName.toLowerCase() === 'input';
+
+  if (isClickable || isInputable) {
     const uniqueElementId = getElementUniqueId(targetElement);
     const currentPageUrl = document.location.href;
 
@@ -78,11 +82,12 @@ function detectClickEvent(event: MouseEvent) {
         const { tabId, windowId } = response;
         if (uniqueElementId) {
           eventInfoStorage.addEvent({
-            type: 'click',
+            type: isInputable ? 'input' : 'click',
             targetId: uniqueElementId,
             url: currentPageUrl,
             tabId,
             windowId,
+            replayed: false,
           });
         }
       }
@@ -147,6 +152,7 @@ function saveInputValue(targetElement: HTMLInputElement | HTMLTextAreaElement) {
           tabId,
           windowId,
           inputValue: finalValue,
+          replayed: false,
         });
       }
     });
@@ -154,21 +160,21 @@ function saveInputValue(targetElement: HTMLInputElement | HTMLTextAreaElement) {
 }
 
 // 이미 focus되어 있는 경우 currentFocusedInput에 저장
-(() => {
-  attachInputEventListeners();
+// (() => {
+//   attachInputEventListeners();
 
-  const focusedElement = document.activeElement as
-    | HTMLInputElement
-    | HTMLTextAreaElement;
-  if (
-    focusedElement.tagName === 'INPUT' ||
-    focusedElement.tagName === 'TEXTAREA'
-  ) {
-    console.log(focusedElement);
-    detectFocusInputEvent({ target: focusedElement });
-    currentFocusedInput = focusedElement;
-  }
-})();
+//   const focusedElement = document.activeElement as
+//     | HTMLInputElement
+//     | HTMLTextAreaElement;
+//   if (
+//     focusedElement.tagName === 'INPUT' ||
+//     focusedElement.tagName === 'TEXTAREA'
+//   ) {
+//     console.log(focusedElement);
+//     detectFocusInputEvent({ target: focusedElement });
+//     currentFocusedInput = focusedElement;
+//   }
+// })();
 
 function attachInputEventListeners() {
   document.querySelectorAll('input, textarea').forEach(inputElement => {
@@ -192,9 +198,9 @@ function detachInputEventListeners() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
     attachClickEventListeners();
-    attachInputEventListeners();
+    // attachInputEventListeners();
   } else if (message.action === 'deactivateEventTracking') {
     detachClickEventListeners();
-    detachInputEventListeners();
+    // detachInputEventListeners();
   }
 });

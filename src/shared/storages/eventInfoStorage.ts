@@ -16,6 +16,7 @@ export type EventInfo = {
   tabId: number;
   windowId: number;
   inputValue?: string;
+  replayed: boolean;
 };
 
 type EventInfoStorage = BaseStorage<EventInfo[]> & {
@@ -23,6 +24,8 @@ type EventInfoStorage = BaseStorage<EventInfo[]> & {
   editEventInputValue: (eventId: string, inputValue: string) => Promise<void>;
   clearEvents: () => Promise<void>;
   deleteEvent: (eventId: string) => Promise<void>;
+  replayedEvent: (eventId: string) => Promise<void>;
+  resetReplayedEvents: () => Promise<void>;
 };
 
 const storage = createStorage<EventInfo[]>('event-info-storage-key', [], {
@@ -53,6 +56,22 @@ const eventInfoStorage: EventInfoStorage = {
     await storage.set(
       (await storage.get()).filter(event => event.uid !== eventId),
     );
+  },
+  replayedEvent: async eventId => {
+    const events = await storage.get();
+    const eventIndex = events.findIndex(event => event.uid === eventId);
+    if (eventIndex === -1) {
+      return;
+    }
+    events[eventIndex].replayed = true;
+    await storage.set(events);
+  },
+  resetReplayedEvents: async () => {
+    const events = await storage.get();
+    events.forEach(event => {
+      event.replayed = false;
+    });
+    await storage.set(events);
   },
 };
 

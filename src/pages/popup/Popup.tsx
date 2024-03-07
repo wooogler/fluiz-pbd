@@ -29,11 +29,11 @@ import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import { DeleteIcon } from '@chakra-ui/icons';
 import { PiPlayFill, PiRecordFill, PiStopFill } from 'react-icons/pi';
 import modeStorage from '@root/src/shared/storages/modeStorage';
-import ScrollableTextBox from './components/ScrollableTextBox';
 import isURL from 'validator/lib/isURL';
+import EventItem from './components/EventItem';
 
 const Popup = () => {
-  const [inputUrl, setInputUrl] = useState('https://www.naver.com');
+  const [inputUrl, setInputUrl] = useState('https://etax.seoul.go.kr');
   const documentInfo = useStorage(documentInfoStorage);
   const eventInfo = useStorage(eventInfoStorage);
   const mode = useStorage(modeStorage);
@@ -90,6 +90,7 @@ const Popup = () => {
 
   const handleClickReplay = () => {
     modeStorage.change('replay');
+    eventInfoStorage.resetReplayedEvents();
     chrome.runtime.sendMessage({ action: 'replayEvents' });
   };
 
@@ -237,41 +238,7 @@ const Popup = () => {
             </Thead>
             <Tbody>
               {eventInfo.map(item => (
-                <Tr key={item.uid}>
-                  <Td>{item.type}</Td>
-                  <Td>{item.windowId}</Td>
-                  <Td>{item.tabId}</Td>
-                  <Td>
-                    <ScrollableTextBox maxW={100} text={item.url} />
-                  </Td>
-                  <Td>
-                    <ScrollableTextBox maxW={100} text={item.targetId} />
-                  </Td>
-                  {/* <Td>{item.inputValue}</Td> */}
-                  <Td>
-                    {item.type === 'input' && (
-                      <Input
-                        size="sm"
-                        value={item.inputValue}
-                        onChange={event => {
-                          eventInfoStorage.editEventInputValue(
-                            item.uid,
-                            event.target.value,
-                          );
-                        }}
-                      />
-                    )}
-                  </Td>
-                  <Td>
-                    <Button
-                      size="sm"
-                      colorScheme="red"
-                      variant="ghost"
-                      onClick={() => eventInfoStorage.deleteEvent(item.uid)}>
-                      <DeleteIcon />
-                    </Button>
-                  </Td>
-                </Tr>
+                <EventItem key={item.uid} item={item} />
               ))}
             </Tbody>
           </Table>
