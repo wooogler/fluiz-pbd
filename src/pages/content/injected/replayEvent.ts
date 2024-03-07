@@ -7,20 +7,32 @@ import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 
 refreshOnUpdate('pages/content/injected/replayEvent');
 
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'replayEvent') {
-    const event = message.event as EventInfo;
-    const data = await documentInfoStorage.get();
+    const event = message.event;
 
-    console.log('Replaying event: ', event, data);
+    console.log('Replaying event: ', event);
 
-    if (event.type === 'click') {
-      await replayClickEvent(event);
-    } else if (event.type === 'input') {
-      await replayInputEvent(event, data);
-    }
+    (async () => {
+      // 즉시 실행 함수로 비동기 로직을 감싸기
+      try {
+        const data = await documentInfoStorage.get();
 
-    eventInfoStorage.replayedEvent(event.uid);
+        if (event.type === 'click') {
+          await replayClickEvent(event);
+        } else if (event.type === 'input') {
+          await replayInputEvent(event, data);
+        }
+
+        eventInfoStorage.replayedEvent(event.uid);
+        sendResponse({ success: true }); // 비동기 작업이 성공적으로 끝난 후 응답 보내기
+      } catch (error) {
+        console.error(error);
+        sendResponse({ success: false, error: error.toString() }); // 에러 발생 시 응답 보내기
+      }
+    })();
+
+    return true; // 비동기 응답을 처리하기 위해 true 반환
   }
 });
 
