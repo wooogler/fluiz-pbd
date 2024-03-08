@@ -26,7 +26,7 @@ const EventItem = ({ item }: { item: EventInfo }) => {
         <ScrollableTextBox maxW={100} text={item.targetId} />
       </Td>
       <Td>
-        {item.type === 'input' && (
+        {item.type.startsWith('input') && (
           <Input
             size="sm"
             value={inputValue}

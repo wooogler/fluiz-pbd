@@ -10,7 +10,8 @@ export type EventInfo = {
     | 'tab-created'
     | 'window-created'
     | 'tab-removed'
-    | 'window-removed';
+    | 'window-removed'
+    | 'input-cert';
   targetId: string;
   url: string;
   tabId: number;

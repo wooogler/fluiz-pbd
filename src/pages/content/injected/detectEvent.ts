@@ -45,7 +45,7 @@ export function getElementUniqueId(element: HTMLElement): string {
   for (const attr of representativeAttrs) {
     let attrValue = element.getAttribute(attr);
     if (attrValue) {
-      if (attr !== 'style' && attrValue.length > 15) {
+      if (!['id', 'class'].includes(attr) && attrValue.length > 15) {
         attrValue = attrValue.slice(0, 15);
       }
       uniqueAttrs.push(`${attr}=${attrValue}`);
@@ -71,9 +71,16 @@ function detectClickEvent(event: MouseEvent) {
 
   const isInputable =
     window.getComputedStyle(targetElement).cursor === 'text' ||
-    targetElement.tagName.toLowerCase() === 'input';
+    (targetElement.tagName.toLowerCase() === 'input' &&
+      targetElement.getAttribute('type') !== 'button');
 
-  if (isClickable || isInputable) {
+  const isClickCert = targetElement.className.includes('kpd-');
+
+  if ((isClickable || isInputable) && !isClickCert) {
+    const isInputCert =
+      targetElement.id ===
+      'certselect_tek_input1_xwup_certselect_tek_form_toggle_';
+
     const uniqueElementId = getElementUniqueId(targetElement);
     const currentPageUrl = document.location.href;
 
@@ -82,7 +89,7 @@ function detectClickEvent(event: MouseEvent) {
         const { tabId, windowId } = response;
         if (uniqueElementId) {
           eventInfoStorage.addEvent({
-            type: isInputable ? 'input' : 'click',
+            type: isInputCert ? 'input-cert' : isInputable ? 'input' : 'click',
             targetId: uniqueElementId,
             url: currentPageUrl,
             tabId,

@@ -113,6 +113,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+const logCache = [];
+
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === 'getContextId' && sender.tab) {
     sendResponse({
@@ -184,6 +186,8 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
+  } else if (message.action === 'LOG') {
+    logCache.push(message.payload);
   }
 });
 
