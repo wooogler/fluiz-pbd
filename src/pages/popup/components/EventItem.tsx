@@ -1,11 +1,10 @@
-import { Button, Input, Td, Tr } from '@chakra-ui/react';
+import { Button, IconButton, Input, Td, Tr } from '@chakra-ui/react';
 import useAsyncInput from '@root/src/shared/hooks/useAsyncInput';
 import eventInfoStorage, {
   EventInfo,
 } from '@root/src/shared/storages/eventInfoStorage';
-import React, { useState } from 'react';
 import ScrollableTextBox from './ScrollableTextBox';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { PiTrash } from 'react-icons/pi';
 
 const EventItem = ({ item }: { item: EventInfo }) => {
   const [inputValue, handleChange, handleBlur] = useAsyncInput(
@@ -15,7 +14,7 @@ const EventItem = ({ item }: { item: EventInfo }) => {
   );
 
   return (
-    <Tr bgColor={item.replayed && 'blue.100'}>
+    <Tr bgColor={item.replayed && 'blue.50'}>
       <Td>{item.type}</Td>
       <Td>{item.windowId}</Td>
       <Td>{item.tabId}</Td>
@@ -32,17 +31,19 @@ const EventItem = ({ item }: { item: EventInfo }) => {
             value={inputValue}
             onChange={handleChange}
             onBlur={handleBlur}
+            bgColor="white"
           />
         )}
       </Td>
       <Td>
-        <Button
+        <IconButton
           size="sm"
           colorScheme="red"
           variant="ghost"
-          onClick={() => eventInfoStorage.deleteEvent(item.uid)}>
-          <DeleteIcon />
-        </Button>
+          aria-label={`delete event ${item.uid}`}
+          onClick={() => eventInfoStorage.deleteEvent(item.uid)}
+          icon={<PiTrash />}
+        />
       </Td>
     </Tr>
   );
