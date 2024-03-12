@@ -14,25 +14,27 @@ import {
   ButtonGroup,
   Input,
 } from '@chakra-ui/react';
-import useStorage from '@root/src/shared/hooks/useStorage';
-import taskInfoStorage from '@root/src/shared/storages/taskInfoStorage';
+import useTaskInfo from '@root/src/shared/hooks/useTaskInfo';
 import { useState } from 'react';
 import { PiCheck, PiPencilSimple, PiPlus, PiTrash } from 'react-icons/pi';
 
 const TaskList = () => {
-  const taskInfo = useStorage(taskInfoStorage);
+  // const taskInfo = useStorage(taskInfoStorage);
+  const { tasks, addTask, deleteTask, editTaskName, isLoading, isError } =
+    useTaskInfo();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState<string>('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const handleEditClick = (taskId: string) => {
     if (editingId === taskId) {
-      handleSubmit(taskId);
+      editTaskName({ taskId, newName: editedName });
+      setEditingId(null);
     } else {
       setEditingId(taskId);
-      const taskToEdit = taskInfo.find(task => task.uid === taskId);
+      const taskToEdit = tasks?.find(task => task.taskId === taskId);
       if (taskToEdit) {
-        setEditedName(taskToEdit.name);
+        setEditedName(taskToEdit.taskName);
       }
     }
   };
@@ -41,17 +43,15 @@ const TaskList = () => {
     setEditedName(e.target.value);
   };
 
-  const handleSubmit = async (taskId: string) => {
-    await taskInfoStorage.editTaskName(taskId, editedName);
-    setEditingId(null);
+  const handleAddTaskClick = async () => {
+    await addTask({
+      taskName: 'New Task',
+      taskId: Date.now().toString(),
+    });
   };
 
-  const handleAddTask = async () => {
-    await taskInfoStorage.addTask();
-  };
-
-  const handleDelete = async (taskId: string) => {
-    await taskInfoStorage.deleteTask(taskId);
+  const handleDeleteClick = async (taskId: string) => {
+    await deleteTask(taskId);
     if (selectedTaskId === taskId) {
       setSelectedTaskId(null);
     }
@@ -61,20 +61,23 @@ const TaskList = () => {
     setSelectedTaskId(selectedTaskId === taskId ? null : taskId);
   };
 
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error</div>;
+
   return (
     <VStack w={250} mr={2}>
       <Flex w="100%" align="center">
         <Text fontSize="xl" fontWeight="bold" mr={2}>
           Tasks
         </Text>
-        <Text>{`(${taskInfo.length})`}</Text>
+        <Text>{`(${tasks.length})`}</Text>
         <Spacer />
         <IconButton
           aria-label="add task"
           icon={<PiPlus />}
           size="sm"
           variant="outline"
-          onClick={handleAddTask}
+          onClick={handleAddTaskClick}
         />
       </Flex>
       <Box overflowY="auto" w="100%" flex={1}>
@@ -86,49 +89,48 @@ const TaskList = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {taskInfo.map(item => (
+            {tasks.map(item => (
               <Tr
-                key={item.uid}
-                onClick={() => handleSelectTask(item.uid)}
+                key={item.taskId}
+                onClick={() => handleSelectTask(item.taskId)}
                 cursor="pointer"
-                bg={selectedTaskId === item.uid ? 'blue.100' : 'transparent'}>
+                bg={
+                  selectedTaskId === item.taskId ? 'blue.100' : 'transparent'
+                }>
                 <Td>
-                  {editingId === item.uid ? (
+                  {editingId === item.taskId ? (
                     <Input
                       value={editedName}
                       onChange={handleNameChange}
                       onKeyDown={e =>
-                        e.key === 'Enter' && handleSubmit(item.uid)
+                        e.key === 'Enter' && handleEditClick(item.taskId)
                       }
-                      onBlur={() => {
-                        handleSubmit(item.uid);
-                      }}
                       size="sm"
                     />
                   ) : (
-                    item.name
+                    item.taskName
                   )}
                 </Td>
                 <Td isNumeric>
                   <ButtonGroup size="sm" variant="ghost">
                     <IconButton
-                      aria-label={`edit task ${item.name}`}
+                      aria-label={`edit task ${item.taskName}`}
                       icon={
-                        editingId === item.uid ? (
+                        editingId === item.taskId ? (
                           <PiCheck />
                         ) : (
                           <PiPencilSimple />
                         )
                       }
                       onClick={() => {
-                        handleEditClick(item.uid);
+                        handleEditClick(item.taskId);
                       }}
                     />
                     <IconButton
                       colorScheme="red"
-                      aria-label={`delete task ${item.name}`}
+                      aria-label={`delete task ${item.taskName}`}
                       icon={<PiTrash />}
-                      onClick={() => handleDelete(item.uid)}
+                      onClick={() => handleDeleteClick(item.taskId)}
                     />
                   </ButtonGroup>
                 </Td>

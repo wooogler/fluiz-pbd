@@ -15,7 +15,14 @@ const manifest = {
   name: '__MSG_extensionName__',
   version: packageJson.version,
   description: '__MSG_extensionDescription__',
-  permissions: ['storage', 'tabs', 'activeTab', 'scripting', 'webNavigation'],
+  permissions: [
+    'storage',
+    'tabs',
+    'activeTab',
+    'scripting',
+    'webNavigation',
+    'http://localhost:8855/',
+  ],
   host_permissions: ['<all_urls>'],
   side_panel: {
     default_path: 'src/pages/sidepanel/index.html',
@@ -60,7 +67,8 @@ const manifest = {
     },
   ],
   content_security_policy: {
-    extension_pages: "script-src 'self'; object-src 'self'",
+    extension_pages:
+      "script-src 'self' http://localhost:8855; object-src 'self'",
   },
 };
 

@@ -4,9 +4,12 @@ import '@pages/popup/index.css';
 import Popup from '@pages/popup/Popup';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 import { ChakraProvider } from '@chakra-ui/react';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import theme from './theme';
 
 refreshOnUpdate('pages/popup');
+
+const queryClient = new QueryClient();
 
 function init() {
   const appContainer = document.querySelector('#app-container');
@@ -15,9 +18,11 @@ function init() {
   }
   const root = createRoot(appContainer);
   root.render(
-    <ChakraProvider theme={theme}>
-      <Popup />
-    </ChakraProvider>,
+    <QueryClientProvider client={queryClient}>
+      <ChakraProvider theme={theme}>
+        <Popup />
+      </ChakraProvider>
+    </QueryClientProvider>,
   );
 }
 

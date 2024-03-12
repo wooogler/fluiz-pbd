@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { BaseStorage, StorageType, createStorage } from './base';
 
 export type EventInfo = {
@@ -20,6 +21,22 @@ export type EventInfo = {
   replayed: boolean;
 };
 
+type ServerEvent = Omit<EventInfo, 'replayed'>;
+
+interface TaskResponse {
+  taskId: string;
+  taskName: string;
+  createdAt: string;
+  updatedDt: string;
+  events: ServerEvent[];
+}
+
+interface TaskRequest {
+  taskName: string;
+  taskId: string;
+  events: ServerEvent[];
+}
+
 type EventInfoStorage = BaseStorage<EventInfo[]> & {
   addEvent: (event: Omit<EventInfo, 'uid'>) => Promise<void>;
   editEventInputValue: (eventId: string, inputValue: string) => Promise<void>;
@@ -27,6 +44,8 @@ type EventInfoStorage = BaseStorage<EventInfo[]> & {
   deleteEvent: (eventId: string) => Promise<void>;
   replayedEvent: (eventId: string) => Promise<void>;
   resetReplayedEvents: () => Promise<void>;
+  loadEventsFromServer: (taskId: string) => Promise<void>;
+  saveEventsToServer: (taskName: string, taskId: string) => Promise<void>;
 };
 
 const storage = createStorage<EventInfo[]>('event-info-storage-key', [], {
@@ -73,6 +92,34 @@ const eventInfoStorage: EventInfoStorage = {
       event.replayed = false;
     });
     await storage.set(events);
+  },
+  loadEventsFromServer: async (taskId: string) => {
+    try {
+      const response = await axios.get<TaskResponse>(
+        `http://localhost:8855/api/tasks/${taskId}`,
+      );
+      const events: EventInfo[] = response.data.events.map(event => ({
+        ...event,
+        replayed: false,
+      }));
+      await storage.set(events);
+    } catch (error) {
+      console.error('Failed to load events from server', error);
+      throw error;
+    }
+  },
+  saveEventsToServer: async (taskName: string, taskId: string) => {
+    try {
+      const events = await storage.get();
+      await axios.post<TaskRequest>(`http://localhost:8855/api/tasks`, {
+        taskName,
+        taskId,
+        events,
+      });
+    } catch (error) {
+      console.error('Failed to save events to server', error);
+      throw error;
+    }
   },
 };
 
