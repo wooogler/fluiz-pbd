@@ -14,17 +14,19 @@ import {
   ButtonGroup,
   Input,
 } from '@chakra-ui/react';
+import useStorage from '@root/src/shared/hooks/useStorage';
 import useTaskInfo from '@root/src/shared/hooks/useTaskInfo';
-import { useState } from 'react';
+import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
+import taskInfoStorage from '@root/src/shared/storages/taskInfoStorage';
+import { useEffect , useState } from 'react';
 import { PiCheck, PiPencilSimple, PiPlus, PiTrash } from 'react-icons/pi';
 
 const TaskList = () => {
-  // const taskInfo = useStorage(taskInfoStorage);
+  const { selectedTaskId } = useStorage(taskInfoStorage);
   const { tasks, addTask, deleteTask, editTaskName, isLoading, isError } =
     useTaskInfo();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState<string>('');
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const handleEditClick = (taskId: string) => {
     if (editingId === taskId) {
@@ -53,13 +55,47 @@ const TaskList = () => {
   const handleDeleteClick = async (taskId: string) => {
     await deleteTask(taskId);
     if (selectedTaskId === taskId) {
-      setSelectedTaskId(null);
+      taskInfoStorage.selectTask(null, null);
+      await eventInfoStorage.clearEvents();
     }
   };
 
-  const handleSelectTask = (taskId: string) => {
-    setSelectedTaskId(selectedTaskId === taskId ? null : taskId);
+  const loadTaskEvents = async (taskId: string) => {
+    await eventInfoStorage.loadEventsFromServer(taskId);
   };
+
+  const saveTaskEvents = async (taskId: string) => {
+    const task = tasks.find(task => task.taskId === taskId);
+    if (task) {
+      await eventInfoStorage.saveEventsToServer(task.taskName, taskId);
+    }
+  };
+
+  const handleSelectTask = async (taskId: string) => {
+    if (selectedTaskId === taskId) {
+      await saveTaskEvents(selectedTaskId);
+      taskInfoStorage.selectTask(null, null);
+      await eventInfoStorage.clearEvents();
+    } else {
+      if (selectedTaskId) {
+        await saveTaskEvents(selectedTaskId);
+      }
+      taskInfoStorage.selectTask(
+        taskId,
+        tasks.find(task => task.taskId === taskId)?.taskName,
+      );
+      await eventInfoStorage.clearEvents();
+      await loadTaskEvents(taskId);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (selectedTaskId) {
+        saveTaskEvents(selectedTaskId);
+      }
+    };
+  }, [selectedTaskId]);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error</div>;
@@ -122,7 +158,8 @@ const TaskList = () => {
                           <PiPencilSimple />
                         )
                       }
-                      onClick={() => {
+                      onClick={e => {
+                        e.stopPropagation();
                         handleEditClick(item.taskId);
                       }}
                     />
@@ -130,7 +167,10 @@ const TaskList = () => {
                       colorScheme="red"
                       aria-label={`delete task ${item.taskName}`}
                       icon={<PiTrash />}
-                      onClick={() => handleDeleteClick(item.taskId)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleDeleteClick(item.taskId);
+                      }}
                     />
                   </ButtonGroup>
                 </Td>

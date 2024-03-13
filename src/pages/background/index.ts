@@ -134,7 +134,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     });
   } else if (message.action === 'replayEvents') {
     const eventInfo = await eventInfoStorage.get();
+    const stopReplay = false;
     for (const event of eventInfo) {
+      // if (stopReplay) break;
+
       if (event.type === 'window-created') {
         await new Promise<void>((resolve, reject) => {
           chrome.windows.create(
@@ -177,7 +180,9 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
                 event: event,
               },
               response => {
-                // 응답을 처리하고 1초 후에 resolve 호출
+                // if (response && !response.success) {
+                //   stopReplay = true;
+                // }
                 setTimeout(resolve, 1000); // 여기에서 1초 대기
               },
             );

@@ -22,6 +22,7 @@ import { useState, KeyboardEventHandler } from 'react';
 import useStorage from '@root/src/shared/hooks/useStorage';
 import modeStorage from '@root/src/shared/storages/modeStorage';
 import isURL from 'validator/lib/isURL';
+import taskInfoStorage from '@root/src/shared/storages/taskInfoStorage';
 
 const isValidUrl = (url: string): boolean => {
   return isURL(url);
@@ -31,6 +32,7 @@ const EventList = () => {
   const [inputUrl, setInputUrl] = useState('https://etax.seoul.go.kr');
 
   const eventInfo = useStorage(eventInfoStorage);
+  const taskInfo = useStorage(taskInfoStorage);
   const mode = useStorage(modeStorage);
 
   const [recordWindowId, setRecordWindowId] = useState<number | null>(null);
@@ -179,9 +181,8 @@ const EventList = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {eventInfo.map(item => (
-              <EventItem key={item.uid} item={item} />
-            ))}
+            {taskInfo.selectedTaskId &&
+              eventInfo.map(item => <EventItem key={item.uid} item={item} />)}
           </Tbody>
         </Table>
       </Box>

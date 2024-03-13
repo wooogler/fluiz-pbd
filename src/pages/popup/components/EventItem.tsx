@@ -14,7 +14,14 @@ const EventItem = ({ item }: { item: EventInfo }) => {
   );
 
   return (
-    <Tr bgColor={item.replayed && 'blue.50'}>
+    <Tr
+      bgColor={
+        item.replayed === 'error'
+          ? 'red.100'
+          : item.replayed
+            ? 'blue.50'
+            : 'transparent'
+      }>
       <Td>{item.type}</Td>
       <Td>{item.windowId}</Td>
       <Td>{item.tabId}</Td>

@@ -22,23 +22,25 @@ const useTaskInfo = () => {
   const queryClient = useQueryClient();
 
   const fetchTasks = async (): Promise<Task[]> => {
-    const response = await axios.get<Task[]>('http://localhost:8855/api/tasks');
+    const response = await axios.get<Task[]>(
+      'http://125.131.73.23:8855/api/tasks',
+    );
     return response.data;
   };
 
   const addTask = async (payload: TaskAddPayload): Promise<void> => {
-    await axios.post('http://localhost:8855/api/tasks', payload);
+    await axios.post('http://125.131.73.23:8855/api/tasks', payload);
   };
 
   const deleteTask = async (taskId: string): Promise<void> => {
-    await axios.delete(`http://localhost:8855/api/tasks/${taskId}`);
+    await axios.delete(`http://125.131.73.23:8855/api/tasks/${taskId}`);
   };
 
   const editTaskName = async ({
     taskId,
     newName,
   }: TaskEditPayload): Promise<void> => {
-    await axios.put(`http://localhost:8855/api/tasks/${taskId}`, {
+    await axios.put(`http://125.131.73.23:8855/api/tasks/${taskId}`, {
       taskName: newName,
     });
   };
