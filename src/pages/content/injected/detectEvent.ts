@@ -1,65 +1,86 @@
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
+import { finder } from '@medv/finder';
 
 refreshOnUpdate('pages/content/injected/detectElement');
 
-function getElementXPath(element: HTMLElement): string {
-  // 해당 요소의 상대적인 XPath를 구하는 함수
-  const getXPath = (elm: HTMLElement): string | null => {
-    if (elm.id !== '') return `id("${elm.id}")`;
-    if (elm === document.body) return elm.tagName;
+// function getElementXPath(element: HTMLElement): string {
+//   // 해당 요소의 상대적인 XPath를 구하는 함수
+//   const getXPath = (elm: HTMLElement): string | null => {
+//     if (elm.id !== '') return `id("${elm.id}")`;
+//     if (elm === document.body) return elm.tagName;
 
-    let idx = 1;
-    for (
-      let sib = elm.previousElementSibling;
-      sib;
-      sib = sib.previousElementSibling
-    ) {
-      if (sib.tagName === elm.tagName) idx++;
-    }
+//     let idx = 1;
+//     for (
+//       let sib = elm.previousElementSibling;
+//       sib;
+//       sib = sib.previousElementSibling
+//     ) {
+//       if (sib.tagName === elm.tagName) idx++;
+//     }
 
-    return `${getXPath(elm.parentElement as HTMLElement)}/${elm.tagName}[${idx}]`;
-  };
+//     return `${getXPath(elm.parentElement as HTMLElement)}/${elm.tagName}[${idx}]`;
+//   };
 
-  return getXPath(element);
-}
+//   return getXPath(element);
+// }
 
-export function getElementUniqueId(element: HTMLElement): string {
-  const representativeAttrs = [
-    'id',
-    'class',
-    'type',
-    'name',
-    'role',
-    'type',
-    'aria-label',
-    'href',
-    'src',
-  ];
-  const uniqueAttrs: string[] = [];
-  uniqueAttrs.push(element.tagName.toLowerCase());
-  if (element.textContent) {
-    uniqueAttrs.push(element.textContent.trim().slice(0, 20));
+// export function getElementUniqueId(element: HTMLElement): string {
+//   const representativeAttrs = [
+//     'id',
+//     'class',
+//     'type',
+//     'name',
+//     'role',
+//     'type',
+//     'aria-label',
+//     'href',
+//     'src',
+//   ];
+//   const uniqueAttrs: string[] = [];
+//   uniqueAttrs.push(element.tagName.toLowerCase());
+//   if (element.textContent) {
+//     uniqueAttrs.push(element.textContent.trim().slice(0, 20));
+//   }
+//   let classValue: string | null = null;
+//   for (const attr of representativeAttrs) {
+//     let attrValue = element.getAttribute(attr);
+//     if (attrValue) {
+//       if (!['id', 'class', 'name'].includes(attr) && attrValue.length > 15) {
+//         attrValue = attrValue.slice(0, 15);
+//       }
+//       uniqueAttrs.push(`${attr}=${attrValue}`);
+//       if (attr === 'class') {
+//         classValue = attrValue;
+//       }
+//     }
+//   }
+
+//   if (classValue && classValue.startsWith('kpd-')) {
+//     const relativeXPath = getElementXPath(element);
+//     uniqueAttrs.push(`xpath=${relativeXPath}`);
+//   }
+//   return uniqueAttrs.join(',');
+// }
+
+export function getElementUniqueId(element: HTMLElement) {
+  if (element.id) {
+    return `id=${element.id}`;
   }
-  let classValue: string | null = null;
-  for (const attr of representativeAttrs) {
-    let attrValue = element.getAttribute(attr);
-    if (attrValue) {
-      if (!['id', 'class'].includes(attr) && attrValue.length > 15) {
-        attrValue = attrValue.slice(0, 15);
-      }
-      uniqueAttrs.push(`${attr}=${attrValue}`);
-      if (attr === 'class') {
-        classValue = attrValue;
-      }
-    }
+
+  if (element.getAttribute('name')) {
+    return `name=${element.getAttribute('name')}`;
   }
 
-  if (classValue && classValue.startsWith('kpd-')) {
-    const relativeXPath = getElementXPath(element);
-    uniqueAttrs.push(`xpath=${relativeXPath}`);
+  if (
+    element.tagName.toLowerCase() === 'a' &&
+    element.textContent.trim().length > 0
+  ) {
+    return `linkText=${element.textContent.trim()}`;
   }
-  return uniqueAttrs.join(',');
+
+  const cssSelector = finder(element);
+  return `css=${cssSelector}`;
 }
 
 function detectClickEvent(event: MouseEvent) {
@@ -74,7 +95,8 @@ function detectClickEvent(event: MouseEvent) {
     (targetElement.tagName.toLowerCase() === 'input' &&
       targetElement.getAttribute('type') !== 'button');
 
-  const isClickCert = targetElement.className.includes('kpd-');
+  // const isClickCert = targetElement.className.includes('kpd-');
+  const isClickCert = false;
 
   if ((isClickable || isInputable) && !isClickCert) {
     const isInputCert =
