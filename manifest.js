@@ -21,7 +21,7 @@ const manifest = {
     'activeTab',
     'scripting',
     'webNavigation',
-    'http://localhost:8855/',
+    'https://api.fluiz.io/api/*',
   ],
   host_permissions: ['<all_urls>'],
   side_panel: {

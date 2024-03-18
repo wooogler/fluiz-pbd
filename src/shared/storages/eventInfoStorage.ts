@@ -13,7 +13,9 @@ export type EventInfo = {
     | 'window-created'
     | 'tab-removed'
     | 'window-removed'
-    | 'input-cert';
+    | 'input-cert'
+    | 'extract'
+    | 'enter-press';
   targetId: string;
   url: string;
   tabId: number;
@@ -74,10 +76,18 @@ const eventInfoStorage: EventInfoStorage = {
     const { selectedTaskId, selectedTaskName } = await taskInfoStorage.get();
     await storage.set([]);
     if (selectedTaskId) {
-      await eventInfoStorage.saveEventsToServer(
-        selectedTaskName,
-        selectedTaskId,
-      );
+      try {
+        const response = await fetch(
+          `https://api.fluiz.io/api/tasks/${selectedTaskId}/events`,
+          {
+            method: 'DELETE',
+          },
+        );
+        if (!response.ok) throw new Error('Failed to clear events from server');
+      } catch (e) {
+        console.error('Failed to clear events from server', e);
+        throw e;
+      }
     }
   },
   editEventInputValue: async (eventId, inputValue) => {
@@ -90,10 +100,23 @@ const eventInfoStorage: EventInfoStorage = {
     events[eventIndex].inputValue = inputValue;
     await storage.set(events);
     if (selectedTaskId) {
-      await eventInfoStorage.saveEventsToServer(
-        selectedTaskName,
-        selectedTaskId,
-      );
+      try {
+        const response = await fetch(
+          `https://api.fluiz.io/api/tasks/${selectedTaskId}/events/${eventId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inputValue }),
+          },
+        );
+        if (!response.ok)
+          throw new Error('Failed to edit event input value from server');
+      } catch (e) {
+        console.error('Failed to edit event input value from server', e);
+        throw e;
+      }
     }
   },
   deleteEvent: async eventId => {
@@ -102,9 +125,11 @@ const eventInfoStorage: EventInfoStorage = {
       (await storage.get()).filter(event => event.uid !== eventId),
     );
     try {
-      await axios.delete(
-        `http://125.131.73.23:8855/api/tasks/${selectedTaskId}/${eventId}`,
+      const response = await fetch(
+        `https://api.fluiz.io/api/tasks/${selectedTaskId}/events/${eventId}`,
+        { method: 'DELETE' },
       );
+      if (!response.ok) throw new Error('Failed to delete event from server');
     } catch (e) {
       console.error('Failed to delete event from server', e);
       throw e;
@@ -132,9 +157,9 @@ const eventInfoStorage: EventInfoStorage = {
   },
   loadEventsFromServer: async (taskId: string) => {
     try {
-      const response = await axios.get<TaskResponse>(
-        `http://125.131.73.23:8855/api/tasks/${taskId}`,
-      );
+      const response = await fetch(`https://api.fluiz.io/api/tasks/${taskId}`);
+      if (!response.ok) throw new Error('Failed to load events from server');
+      const data: TaskResponse = await response.json();
       const flattenEvents = (
         event: ServerEvent | null,
         events: EventInfo[] = [],
@@ -148,7 +173,7 @@ const eventInfoStorage: EventInfoStorage = {
       };
 
       const events: EventInfo[] = [];
-      response.data.events.map(event => {
+      data.events.map(event => {
         flattenEvents(event, events);
       });
       await storage.set(events);
@@ -160,11 +185,14 @@ const eventInfoStorage: EventInfoStorage = {
   saveEventsToServer: async (taskName: string, taskId: string) => {
     try {
       const events = await storage.get();
-      await axios.post<TaskRequest>(`http://125.131.73.23:8855/api/tasks`, {
-        taskName,
-        taskId,
-        events,
+      const response = await fetch(`https://api.fluiz.io/api/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ taskName, taskId, events }),
       });
+      if (!response.ok) throw new Error('Failed to save events to server');
     } catch (error) {
       console.error('Failed to save events to server', error);
       throw error;

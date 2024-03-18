@@ -18,7 +18,7 @@ import useStorage from '@root/src/shared/hooks/useStorage';
 import useTaskInfo from '@root/src/shared/hooks/useTaskInfo';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import taskInfoStorage from '@root/src/shared/storages/taskInfoStorage';
-import { useEffect , useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PiCheck, PiPencilSimple, PiPlus, PiTrash } from 'react-icons/pi';
 
 const TaskList = () => {
@@ -73,29 +73,16 @@ const TaskList = () => {
 
   const handleSelectTask = async (taskId: string) => {
     if (selectedTaskId === taskId) {
-      await saveTaskEvents(selectedTaskId);
-      taskInfoStorage.selectTask(null, null);
+      await taskInfoStorage.selectTask(null, null);
       await eventInfoStorage.clearEvents();
     } else {
-      if (selectedTaskId) {
-        await saveTaskEvents(selectedTaskId);
-      }
       taskInfoStorage.selectTask(
         taskId,
         tasks.find(task => task.taskId === taskId)?.taskName,
       );
-      await eventInfoStorage.clearEvents();
       await loadTaskEvents(taskId);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (selectedTaskId) {
-        saveTaskEvents(selectedTaskId);
-      }
-    };
-  }, [selectedTaskId]);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error</div>;

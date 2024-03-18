@@ -1,6 +1,6 @@
 import { BaseStorage, StorageType, createStorage } from './base';
 
-type Mode = 'record' | 'stop' | 'replay';
+type Mode = 'record' | 'stop' | 'replay' | 'extract';
 
 type ModeStorage = BaseStorage<Mode> & {
   change: (mode: Mode) => Promise<void>;

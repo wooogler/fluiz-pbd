@@ -140,7 +140,7 @@ const EventList = () => {
               mode === 'record' ? <PiStopFill /> : <PiRecordFill color="red" />
             }
           />
-          <Tooltip
+          {/* <Tooltip
             label={
               eventInfo.length === 0
                 ? 'No events to play'
@@ -157,7 +157,7 @@ const EventList = () => {
               icon={<PiPlayFill />}
               onClick={handleClickReplay}
             />
-          </Tooltip>
+          </Tooltip> */}
 
           <Button
             size="sm"

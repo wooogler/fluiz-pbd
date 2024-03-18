@@ -95,8 +95,8 @@ function detectClickEvent(event: MouseEvent) {
     (targetElement.tagName.toLowerCase() === 'input' &&
       targetElement.getAttribute('type') !== 'button');
 
-  // const isClickCert = targetElement.className.includes('kpd-');
-  const isClickCert = false;
+  const isClickCert = targetElement.className.includes('kpd-');
+  // const isClickCert = false;
 
   if ((isClickable || isInputable) && !isClickCert) {
     const isInputCert =
@@ -106,30 +106,96 @@ function detectClickEvent(event: MouseEvent) {
     const uniqueElementId = getElementUniqueId(targetElement);
     const currentPageUrl = document.location.href;
 
-    chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+    chrome.runtime.sendMessage({ action: 'getContextId' }, async response => {
       if (response) {
         const { tabId, windowId } = response;
         if (uniqueElementId) {
-          eventInfoStorage.addEvent({
-            type: isInputCert ? 'input-cert' : isInputable ? 'input' : 'click',
-            targetId: uniqueElementId,
-            url: currentPageUrl,
-            tabId,
-            windowId,
-            replayed: false,
-          });
+          const lastEvent = (await eventInfoStorage.get()).slice(-1)[0];
+          if (
+            lastEvent.type !== 'input' ||
+            lastEvent.targetId !== uniqueElementId
+          )
+            eventInfoStorage.addEvent({
+              type: isInputCert
+                ? 'input-cert'
+                : isInputable
+                  ? 'input'
+                  : 'click',
+              targetId: uniqueElementId,
+              url: currentPageUrl,
+              tabId,
+              windowId,
+              replayed: false,
+            });
         }
       }
     });
   }
 }
 
-function attachClickEventListeners() {
+function attachEventListeners() {
   document.body.addEventListener('click', detectClickEvent, true);
+  document.body.addEventListener('mouseup', detectTextSelection, true);
+  document.body.addEventListener('keydown', detectEnterPress, true);
 }
 
-function detachClickEventListeners() {
+function detachEventListeners() {
   document.body.removeEventListener('click', detectClickEvent, true);
+  document.body.removeEventListener('mouseup', detectTextSelection, true);
+  document.body.removeEventListener('keydown', detectEnterPress, true);
+}
+
+function detectTextSelection(event: MouseEvent) {
+  const selection = window.getSelection();
+  if (selection && selection.toString().length > 0) {
+    const selectedText = selection.toString();
+    let container = selection.getRangeAt(0).commonAncestorContainer;
+    if (container.nodeType === 3) {
+      container = container.parentElement;
+    }
+    const targetElement = container as HTMLElement;
+    if (targetElement) {
+      const uniqueElementId = getElementUniqueId(targetElement);
+      const currentPageUrl = document.location.href;
+
+      chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+        if (response) {
+          const { tabId, windowId } = response;
+          eventInfoStorage.addEvent({
+            type: 'extract',
+            targetId: uniqueElementId,
+            url: currentPageUrl,
+            tabId,
+            windowId,
+            inputValue: selectedText,
+            replayed: false,
+          });
+        }
+      });
+    }
+  }
+}
+
+function detectEnterPress(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    const targetElement = event.target as HTMLElement;
+    const uniqueElementId = getElementUniqueId(targetElement);
+    const currentPageUrl = document.location.href;
+
+    chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+      if (response) {
+        const { tabId, windowId } = response;
+        eventInfoStorage.addEvent({
+          type: 'enter-press',
+          targetId: uniqueElementId,
+          url: currentPageUrl,
+          tabId,
+          windowId,
+          replayed: false,
+        });
+      }
+    });
+  }
 }
 
 let currentFocusedInput: HTMLInputElement | HTMLTextAreaElement | null = null;
@@ -226,10 +292,8 @@ function detachInputEventListeners() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'activateEventTracking') {
-    attachClickEventListeners();
-    // attachInputEventListeners();
+    attachEventListeners();
   } else if (message.action === 'deactivateEventTracking') {
-    detachClickEventListeners();
-    // detachInputEventListeners();
+    detachEventListeners();
   }
 });
