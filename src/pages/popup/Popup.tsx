@@ -56,7 +56,7 @@ const Popup = () => {
   return (
     <Flex h="full" flex={1} w="100%">
       <VStack w="100%" spacing={3} p={3}>
-        <VStack w="100%">
+        {/* <VStack w="100%">
           <Box
             {...getRootProps()}
             p={5}
@@ -88,7 +88,7 @@ const Popup = () => {
               </Tbody>
             </Table>
           )}
-        </VStack>
+        </VStack> */}
         <Flex h="full" flex={1} w="100%" overflowY="hidden">
           <TaskList />
           <Divider orientation="vertical" />
