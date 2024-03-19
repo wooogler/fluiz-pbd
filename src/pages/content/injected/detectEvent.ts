@@ -148,16 +148,34 @@ function detachEventListeners() {
 function detectTextSelection(event: MouseEvent) {
   const selection = window.getSelection();
   if (selection && selection.toString().length > 0) {
-    const selectedText = selection.toString();
-    let container = selection.getRangeAt(0).commonAncestorContainer;
-    if (container.nodeType === 3) {
-      container = container.parentElement;
-    }
-    const targetElement = container as HTMLElement;
-    if (targetElement) {
-      const uniqueElementId = getElementUniqueId(targetElement);
-      const currentPageUrl = document.location.href;
+    console.log(selection.toString());
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    console.log('range', range);
+    console.log('selectedText', selectedText);
 
+    const startNode = range.startContainer;
+    const endNode = range.endContainer;
+    console.log('startNode', startNode);
+    console.log('endNode', endNode);
+
+    const startElement =
+      startNode.nodeType === Node.TEXT_NODE
+        ? startNode.parentElement
+        : startNode;
+    const endElement =
+      endNode.nodeType === Node.TEXT_NODE ? endNode.parentElement : endNode;
+
+    console.log('startElement', startElement);
+    console.log('endElement', endElement);
+
+    let commonAncestor = range.commonAncestorContainer;
+    if (commonAncestor.nodeType === Node.TEXT_NODE) {
+      commonAncestor = commonAncestor.parentElement;
+    }
+    if (commonAncestor) {
+      const uniqueElementId = getElementUniqueId(commonAncestor as HTMLElement);
+      const currentPageUrl = document.location.href;
       chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
         if (response) {
           const { tabId, windowId } = response;
