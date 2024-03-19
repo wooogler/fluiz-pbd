@@ -15,7 +15,9 @@ export type EventInfo = {
     | 'window-removed'
     | 'input-cert'
     | 'extract'
-    | 'enter-press';
+    | 'enter-press'
+    | 'select-option'
+    | 'screenshot';
   targetId: string;
   url: string;
   tabId: number;

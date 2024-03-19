@@ -85,7 +85,7 @@ export function getElementUniqueId(element: HTMLElement) {
 
 function detectClickEvent(event: MouseEvent) {
   const targetElement = event.target as HTMLElement;
-  console.log(targetElement, 'targetElement');
+  // console.log(targetElement, 'targetElement');
   const isClickable =
     window.getComputedStyle(targetElement).cursor === 'pointer' ||
     targetElement.hasAttribute('tabindex');
@@ -133,63 +133,135 @@ function detectClickEvent(event: MouseEvent) {
   }
 }
 
+function detectSelectEvent(event: Event) {
+  const targetElement = event.target as HTMLSelectElement;
+  if (targetElement.tagName.toLowerCase() === 'select') {
+    const selectedOptionText =
+      targetElement.options[targetElement.selectedIndex].text;
+    const uniqueElementId = getElementUniqueId(targetElement);
+    const currentPageUrl = document.location.href;
+
+    chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+      if (response) {
+        const { tabId, windowId } = response;
+        eventInfoStorage.addEvent({
+          type: 'select-option',
+          targetId: uniqueElementId,
+          url: currentPageUrl,
+          tabId,
+          windowId,
+          replayed: false,
+          inputValue: selectedOptionText,
+        });
+      }
+    });
+  }
+}
+
 function attachEventListeners() {
   document.body.addEventListener('click', detectClickEvent, true);
   document.body.addEventListener('mouseup', detectTextSelection, true);
   document.body.addEventListener('keydown', detectEnterPress, true);
+  document.body.addEventListener('change', detectSelectEvent, true);
 }
 
 function detachEventListeners() {
   document.body.removeEventListener('click', detectClickEvent, true);
   document.body.removeEventListener('mouseup', detectTextSelection, true);
   document.body.removeEventListener('keydown', detectEnterPress, true);
+  document.body.removeEventListener('change', detectSelectEvent, true);
+}
+
+function findDeepestNode(
+  node: Node,
+  char: string,
+  isLastChar: boolean = false,
+) {
+  if (!node) return null;
+  let foundNode: Node | null = null;
+  if (node.nodeType === Node.TEXT_NODE && node.textContent.includes(char)) {
+    return node;
+  } else if (node.nodeType === Node.ELEMENT_NODE) {
+    for (const child of node.childNodes) {
+      const result = findDeepestNode(child, char, isLastChar);
+      if (result) {
+        foundNode = result;
+        if (!isLastChar || (isLastChar && child.contains(foundNode))) {
+          break;
+        }
+      }
+    }
+  }
+  return foundNode;
+}
+
+function findCommonAncestor(nodeA: Node, nodeB: Node) {
+  const pathA = [];
+  let currentA = nodeA;
+  while (currentA) {
+    pathA.push(currentA);
+    currentA = currentA.parentNode;
+  }
+  let currentB = nodeB;
+  while (currentB) {
+    if (pathA.includes(currentB)) {
+      return currentB;
+    }
+    currentB = currentB.parentNode;
+  }
+
+  return null;
 }
 
 function detectTextSelection(event: MouseEvent) {
   const selection = window.getSelection();
-  if (selection && selection.toString().length > 0) {
-    console.log(selection.toString());
+  if (
+    selection &&
+    selection.rangeCount > 0 &&
+    selection.toString().length > 0
+  ) {
     const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-    console.log('range', range);
-    console.log('selectedText', selectedText);
+    const selectedText = selection.toString();
+    const firstChar = selectedText.charAt(0);
+    const lastChar = selectedText.charAt(selectedText.length - 1);
 
-    const startNode = range.startContainer;
-    const endNode = range.endContainer;
-    console.log('startNode', startNode);
-    console.log('endNode', endNode);
+    const commonAncestor = range.commonAncestorContainer;
 
-    const startElement =
-      startNode.nodeType === Node.TEXT_NODE
-        ? startNode.parentElement
-        : startNode;
-    const endElement =
-      endNode.nodeType === Node.TEXT_NODE ? endNode.parentElement : endNode;
+    const startNode = findDeepestNode(commonAncestor, firstChar);
+    const endNode = findDeepestNode(commonAncestor, lastChar, true);
 
-    console.log('startElement', startElement);
-    console.log('endElement', endElement);
+    if (startNode && endNode) {
+      const startElement =
+        startNode.nodeType === Node.TEXT_NODE
+          ? startNode.parentElement
+          : startNode;
+      const endElement =
+        endNode.nodeType === Node.TEXT_NODE ? endNode.parentElement : endNode;
 
-    let commonAncestor = range.commonAncestorContainer;
-    if (commonAncestor.nodeType === Node.TEXT_NODE) {
-      commonAncestor = commonAncestor.parentElement;
-    }
-    if (commonAncestor) {
-      const uniqueElementId = getElementUniqueId(commonAncestor as HTMLElement);
-      const currentPageUrl = document.location.href;
-      chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
-        if (response) {
-          const { tabId, windowId } = response;
-          eventInfoStorage.addEvent({
-            type: 'extract',
-            targetId: uniqueElementId,
-            url: currentPageUrl,
-            tabId,
-            windowId,
-            inputValue: selectedText,
-            replayed: false,
-          });
-        }
-      });
+      const deepestCommonAncestor = findCommonAncestor(
+        startElement,
+        endElement,
+      );
+
+      if (deepestCommonAncestor) {
+        const currentPageUrl = document.location.href;
+        chrome.runtime.sendMessage({ action: 'getContextId' }, response => {
+          if (response) {
+            const { tabId, windowId } = response;
+            eventInfoStorage.addEvent({
+              type: 'extract',
+              targetId: getElementUniqueId(
+                deepestCommonAncestor as HTMLElement,
+              ),
+              url: currentPageUrl,
+              tabId,
+              windowId,
+              inputValue: selectedText,
+              replayed: false,
+            });
+          }
+        });
+      }
     }
   }
 }

@@ -7,11 +7,11 @@ import documentInfoStorage from '@root/src/shared/storages/documentInfoStorage';
 
 refreshOnUpdate('pages/content/injected/replayEvent');
 
-const originalConsoleLog = console.log;
-console.log = (...args) => {
-  originalConsoleLog(...args);
-  chrome.runtime.sendMessage({ type: 'LOG', payload: args.join(' ') });
-};
+// const originalConsoleLog = console.log;
+// console.log = (...args) => {
+//   originalConsoleLog(...args);
+//   chrome.runtime.sendMessage({ type: 'LOG', payload: args.join(' ') });
+// };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'replayEvent') {
