@@ -29,7 +29,9 @@ const isValidUrl = (url: string): boolean => {
 };
 
 const EventList = () => {
-  const [inputUrl, setInputUrl] = useState('https://etax.seoul.go.kr');
+  const [inputUrl, setInputUrl] = useState(
+    'https://etax.seoul.go.kr/jsp/BldnStndAmtLstAction.view',
+  );
 
   const eventInfo = useStorage(eventInfoStorage);
   const taskInfo = useStorage(taskInfoStorage);

@@ -5,7 +5,11 @@ import { finder } from '@medv/finder';
 refreshOnUpdate('pages/content/injected/detectElement');
 
 export function getElementUniqueId(element: HTMLElement) {
-  const cssSelector = finder(element);
+  const cssSelector = finder(element, {
+    seedMinLength: 5,
+    optimizedMinLength: 5,
+    idName: () => false,
+  });
   if (element.id) {
     return `id=${element.id};css=${cssSelector}`;
   }
