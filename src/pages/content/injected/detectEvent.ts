@@ -1,31 +1,59 @@
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';
 import { finder } from '@medv/finder';
+import modalStorage from '@root/src/shared/storages/modalStorage';
 
-refreshOnUpdate('pages/content/injected/detectElement');
+refreshOnUpdate('pages/content/injected/detectEvent');
 
 export function getElementUniqueId(element: HTMLElement) {
   const cssSelector = finder(element, {
     seedMinLength: 5,
     optimizedMinLength: 5,
-    idName: () => false,
   });
+
+  let uniqueId = '';
   if (element.id) {
-    return `id=${element.id};css=${cssSelector}`;
-  }
-
-  if (element.getAttribute('name')) {
-    return `name=${element.getAttribute('name')};css=${cssSelector}`;
-  }
-
-  if (
+    uniqueId = `id=${element.id};css=${cssSelector}`;
+  } else if (element.getAttribute('name')) {
+    uniqueId = `name=${element.getAttribute('name')};css=${cssSelector}`;
+  } else if (
     element.tagName.toLowerCase() === 'a' &&
     element.textContent.trim().length > 0
   ) {
-    return `linkText=${element.textContent.trim()};css=${cssSelector}`;
+    uniqueId = `linkText=${element.textContent.trim()};css=${cssSelector}`;
+  } else {
+    uniqueId = `css=${cssSelector}`;
   }
 
-  return `css=${cssSelector}`;
+  function getIframeIdentifier(iframeElement: HTMLIFrameElement) {
+    if (!iframeElement) return '';
+
+    let identifier = '';
+    if (iframeElement.id) {
+      identifier += `[id=${iframeElement.id}]`;
+    } else if (iframeElement.name) {
+      identifier += `[name=${iframeElement.name}]`;
+    } else if (iframeElement.src) {
+      identifier += `[src=${iframeElement.src}]`;
+    }
+
+    if (iframeElement.ownerDocument.defaultView.frameElement) {
+      return (
+        getIframeIdentifier(
+          iframeElement.ownerDocument.defaultView
+            .frameElement as HTMLIFrameElement,
+        ) + identifier
+      );
+    } else {
+      return identifier;
+    }
+  }
+
+  const iframeIdentifier = getIframeIdentifier(
+    window.frameElement as HTMLIFrameElement,
+  );
+
+  return iframeIdentifier + uniqueId;
 }
 
 function detectClickEvent(event: MouseEvent) {
@@ -41,7 +69,6 @@ function detectClickEvent(event: MouseEvent) {
       targetElement.getAttribute('type') !== 'button');
 
   const isClickCert = targetElement.className.includes('kpd-');
-  // const isClickCert = false;
 
   if ((isClickable || isInputable) && !isClickCert) {
     const isInputCert =
@@ -59,7 +86,7 @@ function detectClickEvent(event: MouseEvent) {
           if (
             lastEvent.type !== 'input' ||
             lastEvent.targetId !== uniqueElementId
-          )
+          ) {
             eventInfoStorage.addEvent({
               type: isInputCert
                 ? 'input-cert'
@@ -72,6 +99,7 @@ function detectClickEvent(event: MouseEvent) {
               windowId,
               replayed: false,
             });
+          }
         }
       }
     });

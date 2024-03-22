@@ -48,10 +48,12 @@ const manifest = {
       js: ['src/pages/contentInjected/index.js'],
       // KEY for cache invalidation
       // css: ['assets/css/contentStyle<KEY>.chunk.css'],
+      run_at: 'document_start',
     },
     {
       matches: ['http://*/*', 'https://*/*', '<all_urls>'],
       js: ['src/pages/contentUI/index.js'],
+      all_frames: false,
     },
   ],
   devtools_page: 'src/pages/devtools/index.html',

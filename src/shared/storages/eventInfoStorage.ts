@@ -17,7 +17,8 @@ export type EventInfo = {
     | 'extract'
     | 'enter-press'
     | 'select-option'
-    | 'screenshot';
+    | 'screenshot'
+    | 'accept-popup';
   targetId: string;
   url: string;
   tabId: number;

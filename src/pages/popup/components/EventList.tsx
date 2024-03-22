@@ -14,9 +14,19 @@ import {
   Th,
   Tbody,
   Text,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
 } from '@chakra-ui/react';
 import eventInfoStorage from '@root/src/shared/storages/eventInfoStorage';
-import { PiStopFill, PiRecordFill, PiPlayFill } from 'react-icons/pi';
+import {
+  PiStopFill,
+  PiRecordFill,
+  PiPlayFill,
+  PiPlusBold,
+} from 'react-icons/pi';
 import EventItem from './EventItem';
 import { useState, KeyboardEventHandler } from 'react';
 import useStorage from '@root/src/shared/hooks/useStorage';
@@ -29,9 +39,7 @@ const isValidUrl = (url: string): boolean => {
 };
 
 const EventList = () => {
-  const [inputUrl, setInputUrl] = useState(
-    'https://etax.seoul.go.kr/jsp/BldnStndAmtLstAction.view',
-  );
+  const [inputUrl, setInputUrl] = useState('http://www.iros.go.kr/PMainJ.jsp');
 
   const eventInfo = useStorage(eventInfoStorage);
   const taskInfo = useStorage(taskInfoStorage);
@@ -71,12 +79,6 @@ const EventList = () => {
     }
   };
 
-  const handleClickReplay = () => {
-    modeStorage.change('replay');
-    eventInfoStorage.resetReplayedEvents();
-    chrome.runtime.sendMessage({ action: 'replayEvents' });
-  };
-
   const handleChangeMode = () => {
     if (mode === 'record') {
       modeStorage.change('stop');
@@ -86,6 +88,18 @@ const EventList = () => {
       modeStorage.change('record');
       chrome.runtime.sendMessage({ action: 'activateEventTracking' });
     }
+  };
+
+  const handleAddPopupEvent = () => {
+    const lastEvent = eventInfo[eventInfo.length - 1];
+    eventInfoStorage.addEvent({
+      type: 'accept-popup',
+      targetId: 'N/A',
+      url: lastEvent?.url || '',
+      tabId: lastEvent?.tabId || 0,
+      windowId: lastEvent?.windowId || 0,
+      replayed: false,
+    });
   };
 
   return (
@@ -167,6 +181,21 @@ const EventList = () => {
             onClick={() => eventInfoStorage.clearEvents()}>
             Clear Events
           </Button>
+          <Popover>
+            <PopoverTrigger>
+              <Button size="sm" leftIcon={<PiPlusBold />}>
+                Event
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent width="auto">
+              <PopoverArrow />
+              <PopoverBody>
+                <Button size="sm" onClick={handleAddPopupEvent}>
+                  Popup
+                </Button>
+              </PopoverBody>
+            </PopoverContent>
+          </Popover>
         </HStack>
       </Flex>
       <Box overflowY="auto" w="100%" flex={1}>

@@ -64,13 +64,6 @@ const TaskList = () => {
     await eventInfoStorage.loadEventsFromServer(taskId);
   };
 
-  const saveTaskEvents = async (taskId: string) => {
-    const task = tasks.find(task => task.taskId === taskId);
-    if (task) {
-      await eventInfoStorage.saveEventsToServer(task.taskName, taskId);
-    }
-  };
-
   const handleSelectTask = async (taskId: string) => {
     if (selectedTaskId === taskId) {
       await taskInfoStorage.selectTask(null, null);
